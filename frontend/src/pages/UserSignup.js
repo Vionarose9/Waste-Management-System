@@ -1,15 +1,19 @@
 import React, { useState } from 'react';
-import { Label, TextInput, Button, Card } from 'flowbite-react';
+import axios from 'axios';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { toast } from "@/components/ui/use-toast";
 
-const SignUp = () => {
+export default function SignUp() {
   const [formData, setFormData] = useState({
     name: '',
     userId: '',
     password: '',
     confirmPassword: ''
   });
-
-  const [errors, setErrors] = useState({});
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -20,135 +24,133 @@ const SignUp = () => {
   };
 
   const validateForm = () => {
-    const newErrors = {};
-
-    // Name validation
-    if (!formData.name.trim()) {
-      newErrors.name = 'Name is required';
+    if (formData.name.length < 2) {
+      toast({
+        title: "Error",
+        description: "Name must be at least 2 characters.",
+        variant: "destructive",
+      });
+      return false;
     }
-
-    // User ID validation
-    if (!formData.userId.trim()) {
-      newErrors.userId = 'User ID is required';
-    } else if (formData.userId.length < 4) {
-      newErrors.userId = 'User ID must be at least 4 characters';
+    if (formData.userId.length < 4) {
+      toast({
+        title: "Error",
+        description: "User ID must be at least 4 characters.",
+        variant: "destructive",
+      });
+      return false;
     }
-
-    // Password validation
-    if (!formData.password) {
-      newErrors.password = 'Password is required';
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
+    if (formData.password.length < 6) {
+      toast({
+        title: "Error",
+        description: "Password must be at least 6 characters.",
+        variant: "destructive",
+      });
+      return false;
     }
-
-    // Confirm password validation
     if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
+      toast({
+        title: "Error",
+        description: "Passwords don't match",
+        variant: "destructive",
+      });
+      return false;
     }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return true;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (validateForm()) {
-      // Here you would typically send the signup data to your backend
-      console.log('Form submitted:', {
-        name: formData.name,
-        userId: formData.userId
+    if (!validateForm()) return;
+
+    setIsLoading(true);
+    try {
+      const response = await axios.post('http://localhost:5000/signup', formData);
+      toast({
+        title: "Account created",
+        description: response.data.message,
       });
-      
-      // Reset form or redirect user
-      alert('Signup Successful!');
+      setFormData({ name: '', userId: '', password: '', confirmPassword: '' });
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response) {
+        toast({
+          title: "Error",
+          description: error.response.data.error,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "An error occurred during signup",
+          variant: "destructive",
+        });
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          Waste Management System
-        </h2>
-        <h3 className="mt-2 text-center text-xl text-gray-600">
-          Create Your Account
-        </h3>
-      </div>
-
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <Card className="shadow-lg">
+    <div className="container mx-auto flex items-center justify-center min-h-screen">
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle className="text-2xl font-bold text-center">Waste Management System</CardTitle>
+          <CardDescription className="text-center">Create your account</CardDescription>
+        </CardHeader>
+        <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <Label htmlFor="name" value="Full Name" />
-              <TextInput
+              <Label htmlFor="name">Full Name</Label>
+              <Input
                 id="name"
                 name="name"
-                type="text"
-                placeholder="John Doe"
                 value={formData.name}
                 onChange={handleChange}
-                color={errors.name ? 'failure' : 'default'}
-                helperText={errors.name && <span className="text-red-600">{errors.name}</span>}
+                placeholder="John Doe"
+                required
               />
             </div>
-
             <div>
-              <Label htmlFor="userId" value="User ID" />
-              <TextInput
+              <Label htmlFor="userId">User ID</Label>
+              <Input
                 id="userId"
                 name="userId"
-                type="text"
-                placeholder="Enter unique user ID"
                 value={formData.userId}
                 onChange={handleChange}
-                color={errors.userId ? 'failure' : 'default'}
-                helperText={errors.userId && <span className="text-red-600">{errors.userId}</span>}
+                placeholder="johndoe123"
+                required
               />
             </div>
-
             <div>
-              <Label htmlFor="password" value="Password" />
-              <TextInput
+              <Label htmlFor="password">Password</Label>
+              <Input
                 id="password"
                 name="password"
                 type="password"
-                placeholder="••••••••"
                 value={formData.password}
                 onChange={handleChange}
-                color={errors.password ? 'failure' : 'default'}
-                helperText={errors.password && <span className="text-red-600">{errors.password}</span>}
+                placeholder="••••••••"
+                required
               />
             </div>
-
             <div>
-              <Label htmlFor="confirmPassword" value="Confirm Password" />
-              <TextInput
+              <Label htmlFor="confirmPassword">Confirm Password</Label>
+              <Input
                 id="confirmPassword"
                 name="confirmPassword"
                 type="password"
-                placeholder="••••••••"
                 value={formData.confirmPassword}
                 onChange={handleChange}
-                color={errors.confirmPassword ? 'failure' : 'default'}
-                helperText={errors.confirmPassword && <span className="text-red-600">{errors.confirmPassword}</span>}
+                placeholder="••••••••"
+                required
               />
             </div>
-
-            <div>
-              <Button 
-                type="submit" 
-                color="success" 
-                className="w-full"
-              >
-                Create Account
-              </Button>
-            </div>
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? "Signing up..." : "Sign up"}
+            </Button>
           </form>
-        </Card>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
-};
-
-export default SignUp;
+}
