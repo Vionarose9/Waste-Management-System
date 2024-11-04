@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Label, TextInput, Button, Card } from 'flowbite-react';
+import axios from 'axios';
 
 const Login = () => {
   const [loginData, setLoginData] = useState({
@@ -8,6 +9,7 @@ const Login = () => {
   });
 
   const [errors, setErrors] = useState({});
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -20,12 +22,10 @@ const Login = () => {
   const validateForm = () => {
     const newErrors = {};
 
-    // User ID validation
     if (!loginData.userId.trim()) {
       newErrors.userId = 'User ID is required';
     }
 
-    // Password validation
     if (!loginData.password) {
       newErrors.password = 'Password is required';
     }
@@ -34,31 +34,30 @@ const Login = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (validateForm()) {
-      // Here you would typically send login credentials to your backend
-      console.log('Login attempt:', {
-        userId: loginData.userId
-      });
-      
-      // Simulated login logic (replace with actual authentication)
+      setIsLoading(true);
       try {
-        // Placeholder for actual authentication
-        // In a real app, this would be an API call
-        if (loginData.userId === 'testuser' && loginData.password === 'password123') {
+        const response = await axios.post('http://localhost:5000/api/login', loginData);
+        
+        if (response.data.success) {
+          // Store the token or user data in localStorage/context
+          localStorage.setItem('userId', response.data.userId);
+          
+          // Show success message
           alert('Login Successful!');
-          // Typically, you'd redirect to a dashboard or home page
-        } else {
-          setErrors({
-            login: 'Invalid User ID or Password'
-          });
+          
+          // Redirect to dashboard (implement your routing logic here)
+          // history.push('/dashboard');
         }
       } catch (error) {
         setErrors({
-          login: 'An error occurred during login'
+          login: error.response?.data?.message || 'An error occurred during login'
         });
+      } finally {
+        setIsLoading(false);
       }
     }
   };
@@ -94,6 +93,7 @@ const Login = () => {
                 onChange={handleChange}
                 color={errors.userId ? 'failure' : 'default'}
                 helperText={errors.userId && <span className="text-red-600">{errors.userId}</span>}
+                disabled={isLoading}
               />
             </div>
 
@@ -108,6 +108,7 @@ const Login = () => {
                 onChange={handleChange}
                 color={errors.password ? 'failure' : 'default'}
                 helperText={errors.password && <span className="text-red-600">{errors.password}</span>}
+                disabled={isLoading}
               />
             </div>
 
@@ -118,6 +119,7 @@ const Login = () => {
                   name="remember-me"
                   type="checkbox"
                   className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                  disabled={isLoading}
                 />
                 <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
                   Remember me
@@ -136,8 +138,9 @@ const Login = () => {
                 type="submit" 
                 color="success" 
                 className="w-full"
+                disabled={isLoading}
               >
-                Sign In
+                {isLoading ? 'Signing in...' : 'Sign In'}
               </Button>
             </div>
           </form>
