@@ -109,6 +109,8 @@ def signup():
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': f'An error occurred while creating the user: {str(e)}'}), 500
+    
+
 
 # Test connection route
 @app.route('/test-connection', methods=['GET'])

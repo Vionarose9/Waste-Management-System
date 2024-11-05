@@ -1,162 +1,113 @@
 import React, { useState } from 'react';
-import { Label, TextInput, Button, Card } from 'flowbite-react';
 import axios from 'axios';
+import { Button, Label, TextInput, Card, Alert } from 'flowbite-react';
+import { useNavigate } from 'react-router-dom';
 
-const Login = () => {
-  const [loginData, setLoginData] = useState({
+export default function Login() {
+  const navigate = useNavigate();
+  const [formData, setFormData] = useState({
     userId: '',
     password: ''
   });
-
-  const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
+  const [message, setMessage] = useState({ type: '', content: '' });
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setLoginData(prevState => ({
+    setFormData(prevState => ({
       ...prevState,
       [name]: value
     }));
   };
 
+  const showMessage = (type, content) => {
+    setMessage({ type, content });
+    setTimeout(() => setMessage({ type: '', content: '' }), 5000);
+  };
+
   const validateForm = () => {
-    const newErrors = {};
-
-    if (!loginData.userId.trim()) {
-      newErrors.userId = 'User ID is required';
+    if (formData.userId.length < 4) {
+      showMessage('failure', "User ID must be at least 4 characters.");
+      return false;
     }
-
-    if (!loginData.password) {
-      newErrors.password = 'Password is required';
+    if (formData.password.length < 6) {
+      showMessage('failure', "Password must be at least 6 characters.");
+      return false;
     }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return true;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (validateForm()) {
-      setIsLoading(true);
-      try {
-        const response = await axios.post('http://localhost:5000/api/login', loginData);
-        
-        if (response.data.success) {
-          // Store the token or user data in localStorage/context
-          localStorage.setItem('userId', response.data.userId);
-          
-          // Show success message
-          alert('Login Successful!');
-          
-          // Redirect to dashboard (implement your routing logic here)
-          // history.push('/dashboard');
-        }
-      } catch (error) {
-        setErrors({
-          login: error.response?.data?.message || 'An error occurred during login'
-        });
-      } finally {
-        setIsLoading(false);
+    if (!validateForm()) return;
+
+    setIsLoading(true);
+    try {
+      const response = await axios.post('http://localhost:5000/login', formData);
+      showMessage('success', response.data.message);
+      
+      // Store the token and user data
+      localStorage.setItem('token', response.data.token);
+      localStorage.setItem('user', JSON.stringify(response.data.user));
+      
+      // Redirect to dashboard or home page after successful login
+      navigate('/dashboard');
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response) {
+        showMessage('failure', error.response.data.error);
+      } else {
+        showMessage('failure', "An error occurred during login");
       }
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          Waste Management System
-        </h2>
-        <h3 className="mt-2 text-center text-xl text-gray-600">
-          Login to Your Account
-        </h3>
-      </div>
-
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <Card className="shadow-lg">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {errors.login && (
-              <div className="bg-red-50 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-                {errors.login}
-              </div>
-            )}
-
-            <div>
-              <Label htmlFor="userId" value="User ID" />
-              <TextInput
-                id="userId"
-                name="userId"
-                type="text"
-                placeholder="Enter your User ID"
-                value={loginData.userId}
-                onChange={handleChange}
-                color={errors.userId ? 'failure' : 'default'}
-                helperText={errors.userId && <span className="text-red-600">{errors.userId}</span>}
-                disabled={isLoading}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="password" value="Password" />
-              <TextInput
-                id="password"
-                name="password"
-                type="password"
-                placeholder="••••••••"
-                value={loginData.password}
-                onChange={handleChange}
-                color={errors.password ? 'failure' : 'default'}
-                helperText={errors.password && <span className="text-red-600">{errors.password}</span>}
-                disabled={isLoading}
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <input
-                  id="remember-me"
-                  name="remember-me"
-                  type="checkbox"
-                  className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-                  disabled={isLoading}
-                />
-                <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
-                  Remember me
-                </label>
-              </div>
-
-              <div className="text-sm">
-                <a href="#" className="font-medium text-green-600 hover:text-green-500">
-                  Forgot your password?
-                </a>
-              </div>
-            </div>
-
-            <div>
-              <Button 
-                type="submit" 
-                color="success" 
-                className="w-full"
-                disabled={isLoading}
-              >
-                {isLoading ? 'Signing in...' : 'Sign In'}
-              </Button>
-            </div>
-          </form>
-
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
-              Don't have an account?{' '}
-              <a href="#" className="font-medium text-green-600 hover:text-green-500">
-                Sign Up
-              </a>
-            </p>
+    <div className="flex items-center justify-center min-h-screen bg-gray-100">
+      <Card className="w-full max-w-md">
+        <h2 className="text-2xl font-bold text-center mb-2">Waste Management System</h2>
+        <p className="text-center text-gray-600 mb-6">Login to your account</p>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <div>
+            <Label htmlFor="userId" value="User ID" />
+            <TextInput
+              id="userId"
+              name="userId"
+              type="text"
+              placeholder="Enter your user ID"
+              required
+              value={formData.userId}
+              onChange={handleChange}
+            />
           </div>
-        </Card>
-      </div>
+          <div>
+            <Label htmlFor="password" value="Password" />
+            <TextInput
+              id="password"
+              name="password"
+              type="password"
+              required
+              value={formData.password}
+              onChange={handleChange}
+            />
+          </div>
+          {message.content && (
+            <Alert color={message.type === 'success' ? 'success' : 'failure'}>
+              {message.content}
+            </Alert>
+          )}
+          <Button type="submit" disabled={isLoading}>
+            {isLoading ? "Logging in..." : "Login"}
+          </Button>
+          <p className="text-center text-sm text-gray-600">
+            Don't have an account?{' '}
+            <a href="/signup" className="text-blue-600 hover:underline">
+              Sign up
+            </a>
+          </p>
+        </form>
+      </Card>
     </div>
   );
-};
-
-export default Login;
+}
