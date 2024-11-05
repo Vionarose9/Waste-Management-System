@@ -20,7 +20,7 @@ bcrypt = Bcrypt(app)
 
 # User model
 class User(db.Model):
-    __tablename__ = 'user'
+    _tablename_ = 'user'
     user_id = db.Column(db.String(50), primary_key=True)
     first_name = db.Column(db.String(50), nullable=False)
     last_name = db.Column(db.String(50), nullable=False)
@@ -30,7 +30,7 @@ class User(db.Model):
     password = db.Column(db.String(60), nullable=False)
     centre_id = db.Column(db.Integer, nullable=False)
 
-    def __repr__(self):
+    def _repr_(self):
         return f'<User {self.user_id}>'
 
 # Database initialization function
@@ -140,5 +140,5 @@ def main():
     except Exception as e:
         print(f"An error occurred while starting the application: {e}")
 
-if __name__ == '__main__':
+if __name__ == '_main_':
     main()
