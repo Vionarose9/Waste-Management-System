@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { Button, Label, TextInput, Card, Alert, Select } from 'flowbite-react';
+import { Button,Label,TextInput,Card,Alert,Select} from 'flowbite-react';
 
 export default function SignUp() {
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
     userId: '',
+    phoneNumber: '',
     city: '',
     street: '',
     landmark: '',
@@ -27,7 +28,7 @@ export default function SignUp() {
 
   const showMessage = (type, content) => {
     setMessage({ type, content });
-    setTimeout(() => setMessage({ type: '', content: '' }), 5000); // Clear message after 5 seconds
+    setTimeout(() => setMessage({ type: '', content: '' }), 5000);
   };
 
   const validateForm = () => {
@@ -41,6 +42,10 @@ export default function SignUp() {
     }
     if (formData.userId.length < 4) {
       showMessage('failure', "User ID must be at least 4 characters.");
+      return false;
+    }
+    if (!/^\d{10}$/.test(formData.phoneNumber)) {
+      showMessage('failure', "Phone number must be 10 digits.");
       return false;
     }
     if (formData.password.length < 6) {
@@ -70,6 +75,7 @@ export default function SignUp() {
         firstName: '',
         lastName: '',
         userId: '',
+        phoneNumber: '',
         city: '',
         street: '',
         landmark: '',
@@ -89,11 +95,14 @@ export default function SignUp() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <Card className="w-full max-w-md">
-        <h2 className="text-2xl font-bold text-center mb-2">Waste Management System</h2>
-        <p className="text-center text-gray-600 mb-6">Create your account</p>
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+    <div className="flex items-center justify-center min-h-screen bg-cover bg-center" style={{backgroundImage: 'url("/Background.png")'}}>
+      <div className="absolute inset-0 bg-black opacity-50"></div>
+      <Card className="w-full max-w-2xl relative z-10">
+        <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4">
+          <div className="col-span-2">
+            <h2 className="text-2xl font-bold text-center mb-2">Waste Management System</h2>
+            <p className="text-center text-gray-600 mb-6">Create your account</p>
+          </div>
           <div>
             <Label htmlFor="firstName" value="First Name" />
             <TextInput
@@ -127,6 +136,18 @@ export default function SignUp() {
               placeholder="johndoe123"
               required
               value={formData.userId}
+              onChange={handleChange}
+            />
+          </div>
+          <div>
+            <Label htmlFor="phoneNumber" value="Phone Number" />
+            <TextInput
+              id="phoneNumber"
+              name="phoneNumber"
+              type="tel"
+              placeholder="1234567890"
+              required
+              value={formData.phoneNumber}
               onChange={handleChange}
             />
           </div>
@@ -204,14 +225,18 @@ export default function SignUp() {
               <option value="4">4 - Koramangala</option>
             </Select>
           </div>
-          {message.content && (
-            <Alert color={message.type === 'success' ? 'success' : 'failure'}>
-              {message.content}
-            </Alert>
-          )}
-          <Button type="submit" disabled={isLoading}>
-            {isLoading ? "Signing up..." : "Sign up"}
-          </Button>
+          <div className="col-span-2">
+            {message.content && (
+              <Alert color={message.type === 'success' ? 'success' : 'failure'}>
+                {message.content}
+              </Alert>
+            )}
+          </div>
+          <div className="col-span-2">
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? "Signing up..." : "Sign up"}
+            </Button>
+          </div>
         </form>
       </Card>
     </div>
