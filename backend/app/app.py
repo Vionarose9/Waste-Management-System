@@ -10,7 +10,7 @@ app = Flask(__name__)
 CORS(app)
 
 # Database configuration
-encoded_password = quote_plus('root')
+encoded_password = quote_plus('vijju@2004')
 app.config['SQLALCHEMY_DATABASE_URI'] = f"mysql+pymysql://root:{encoded_password}@127.0.0.1:3305/waste_management_system"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = os.urandom(24)
@@ -20,7 +20,7 @@ bcrypt = Bcrypt(app)
 
 # User model
 class User(db.Model):
-    _tablename_ = 'user'
+    __tablename__ = 'user'  # Fixed: Changed _tablename_ to __tablename__
     user_id = db.Column(db.String(50), primary_key=True)
     first_name = db.Column(db.String(50), nullable=False)
     last_name = db.Column(db.String(50), nullable=False)
@@ -30,7 +30,7 @@ class User(db.Model):
     password = db.Column(db.String(60), nullable=False)
     centre_id = db.Column(db.Integer, nullable=False)
 
-    def _repr_(self):
+    def __repr__(self):  # Fixed: Changed _repr_ to __repr__
         return f'<User {self.user_id}>'
 
 # Database initialization function
@@ -50,10 +50,10 @@ def init_db():
 def test_db_connection():
     try:
         connection = pymysql.connect(
-            host='localhost',
+            host='127.0.0.1',
             user='root',
-            password='root',
-            port=3306
+            password='vijju@2004',
+            port=3305  # Fixed: Changed port to match the URI
         )
         print("Successfully connected to MySQL server!")
         connection.close()
@@ -62,7 +62,6 @@ def test_db_connection():
         print(f"Error connecting to MySQL: {e}")
         return False
 
-# Signup route
 @app.route('/signup', methods=['POST'])
 def signup():
     data = request.json
@@ -109,10 +108,7 @@ def signup():
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': f'An error occurred while creating the user: {str(e)}'}), 500
-    
 
-
-# Test connection route
 @app.route('/test-connection', methods=['GET'])
 def test_connection():
     try:
@@ -122,23 +118,16 @@ def test_connection():
     except Exception as e:
         return jsonify({'error': f'Database connection failed: {str(e)}'}), 500
 
-# Main function
-def main():
+if __name__ == '__main__':  # Fixed: Changed _main_ to __main__
     try:
         # Test initial connection
         if not test_db_connection():
             print("Failed to connect to MySQL server. Please check if the server is running and credentials are correct.")
-            return
-
-        # Initialize database tables
-        init_db()
-        
-        # Start the Flask application
-        print("Starting Flask application...")
-        app.run(debug=True)
-        
+        else:
+            # Initialize database tables
+            init_db()
+            # Start the Flask application
+            print("Starting Flask application...")
+            app.run(debug=True)
     except Exception as e:
         print(f"An error occurred while starting the application: {e}")
-
-if __name__ == '_main_':
-    main()
