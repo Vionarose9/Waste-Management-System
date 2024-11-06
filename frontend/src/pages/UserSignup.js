@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { Button,Label,TextInput,Card,Alert,Select} from 'flowbite-react';
+import { Button, Label, TextInput, Card, Alert, Select } from 'flowbite-react';
 
 export default function SignUp() {
   const [formData, setFormData] = useState({
@@ -69,7 +69,7 @@ export default function SignUp() {
 
     setIsLoading(true);
     try {
-      const response = await axios.post('http://localhost:5000/signup', formData);
+      const response = await axios.post('http://localhost:5000/api/auth/signup', formData);
       showMessage('success', response.data.message);
       setFormData({
         firstName: '',

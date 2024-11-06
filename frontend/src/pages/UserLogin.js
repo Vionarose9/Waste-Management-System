@@ -43,7 +43,7 @@ export default function Login() {
 
     setIsLoading(true);
     try {
-      const response = await axios.post('http://localhost:5000/login', formData);
+      const response = await axios.post('http://localhost:5000/api/auth/login', formData);
       showMessage('success', response.data.message);
       
       // Store the token and user data
@@ -51,7 +51,7 @@ export default function Login() {
       localStorage.setItem('user', JSON.stringify(response.data.user));
       
       // Redirect to dashboard or home page after successful login
-      navigate('/dashboard');
+      navigate('/user/dashboard');
     } catch (error) {
       if (axios.isAxiosError(error) && error.response) {
         showMessage('failure', error.response.data.error);
@@ -87,6 +87,7 @@ export default function Login() {
               id="password"
               name="password"
               type="password"
+              placeholder="Enter your password"
               required
               value={formData.password}
               onChange={handleChange}
