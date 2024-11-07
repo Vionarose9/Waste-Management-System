@@ -5,7 +5,8 @@ import { ShieldCheckIcon } from 'lucide-react';
 const AdminLogin = () => {
   const [adminLoginData, setAdminLoginData] = useState({
     adminId: '',
-    password: ''
+    password: '',
+    centreId: '' // Added centreId
   });
 
   const [errors, setErrors] = useState({});
@@ -31,29 +32,42 @@ const AdminLogin = () => {
       newErrors.password = 'Password is required';
     }
 
+    // Centre ID validation
+    if (!adminLoginData.centreId.trim()) {
+      newErrors.centreId = 'Centre ID is required';
+    } else if (isNaN(adminLoginData.centreId)) {
+      newErrors.centreId = 'Centre ID must be a number';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (validateForm()) {
-      // Here you would typically send login credentials to your backend
-      console.log('Admin Login attempt:', {
-        adminId: adminLoginData.adminId
-      });
-      
-      // Simulated admin login logic (replace with actual authentication)
       try {
-        // Placeholder for actual admin authentication
-        // In a real app, this would be a secure API call
-        if (adminLoginData.adminId === 'admin' && adminLoginData.password === 'admin123') {
+        const response = await fetch('/api/auth/admin-login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            adminId: adminLoginData.adminId,
+            password: adminLoginData.password,
+            centreId: parseInt(adminLoginData.centreId)
+          }),
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
           alert('Admin Login Successful!');
-          // Typically, you'd redirect to admin dashboard
+          // Handle successful login (e.g., store token, redirect)
         } else {
           setErrors({
-            login: 'Invalid Admin ID or Password'
+            login: data.error || 'Invalid Admin ID or Password'
           });
         }
       } catch (error) {
@@ -112,6 +126,20 @@ const AdminLogin = () => {
                 onChange={handleChange}
                 color={errors.password ? 'failure' : 'default'}
                 helperText={errors.password && <span className="text-red-600">{errors.password}</span>}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="centreId" value="Centre ID" />
+              <TextInput
+                id="centreId"
+                name="centreId"
+                type="text"
+                placeholder="Enter Centre ID"
+                value={adminLoginData.centreId}
+                onChange={handleChange}
+                color={errors.centreId ? 'failure' : 'default'}
+                helperText={errors.centreId && <span className="text-red-600">{errors.centreId}</span>}
               />
             </div>
 

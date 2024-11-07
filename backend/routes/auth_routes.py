@@ -94,6 +94,37 @@ def login():
         }), 200
     else:
         return jsonify({'error': 'Invalid userId or password'}), 401
+    
+@auth_bp.route('/admin-login', methods=['POST'])
+def admin_login():
+    data = request.json
+
+    if not data or not data.get('adminId') or not data.get('password') or not data.get('centreId'):
+        return jsonify({'error': 'Missing adminId, password, or centreId'}), 400
+
+    admin = Admin.query.filter_by(
+        admin_id=data['adminId'],
+        centre_id=data['centreId']
+    ).first()
+
+    if admin and bcrypt.check_password_hash(admin.password, data['password']):
+        token = jwt.encode({
+            'admin_id': admin.admin_id,
+            'centre_id': admin.centre_id,
+            'exp': datetime.utcnow() + timedelta(hours=24)
+        }, Config.SECRET_KEY, algorithm='HS256')
+
+        return jsonify({
+            'message': 'Login successful',
+            'token': token,
+            'admin': {
+                'adminId': admin.admin_id,
+                'adminName': admin.admin_name,
+                'centreId': admin.centre_id
+            }
+        }), 200
+    else:
+        return jsonify({'error': 'Invalid admin credentials or centre ID'}), 401
 
 @auth_bp.route('/test-connection', methods=['GET'])
 def test_connection():
