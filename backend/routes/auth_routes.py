@@ -1,10 +1,11 @@
 from flask import request, jsonify
 from flask_bcrypt import Bcrypt
-from models import db, User, UserPhoneNumber
+from models import db, User, UserPhoneNumber,Admin
 from . import auth_bp
 import jwt  # Add this import
 from datetime import datetime, timedelta
 from config import Config
+import logging
 
 bcrypt = Bcrypt()
 
@@ -64,6 +65,7 @@ def signup():
         db.session.rollback()
         return jsonify({'error': f'An error occurred while creating the user: {str(e)}'}), 500
     
+    
 @auth_bp.route('/login', methods=['POST'])
 def login():
     data = request.json
@@ -95,22 +97,21 @@ def login():
     else:
         return jsonify({'error': 'Invalid userId or password'}), 401
     
+
+
+
 @auth_bp.route('/admin-login', methods=['POST'])
 def admin_login():
     data = request.json
 
-    if not data or not data.get('adminId') or not data.get('password') or not data.get('centreId'):
-        return jsonify({'error': 'Missing adminId, password, or centreId'}), 400
+    if not data or not data.get('adminId') or not data.get('password'):
+        return jsonify({'error': 'Missing adminId or password'}), 400
 
-    admin = Admin.query.filter_by(
-        admin_id=data['adminId'],
-        centre_id=data['centreId']
-    ).first()
+    admin = Admin.query.filter_by(admin_id=data['adminId']).first()
 
     if admin and bcrypt.check_password_hash(admin.password, data['password']):
         token = jwt.encode({
             'admin_id': admin.admin_id,
-            'centre_id': admin.centre_id,
             'exp': datetime.utcnow() + timedelta(hours=24)
         }, Config.SECRET_KEY, algorithm='HS256')
 
@@ -124,7 +125,9 @@ def admin_login():
             }
         }), 200
     else:
-        return jsonify({'error': 'Invalid admin credentials or centre ID'}), 401
+        return jsonify({'error': 'Invalid adminId or password'}), 401
+    
+
 
 @auth_bp.route('/test-connection', methods=['GET'])
 def test_connection():

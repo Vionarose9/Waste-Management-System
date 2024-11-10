@@ -1,19 +1,41 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Button, Table, Badge } from 'flowbite-react';
 import { HiPlus, HiClock, HiUser, HiBell, HiOutlineArrowRight } from 'react-icons/hi';
+import WasteRequestForm from './WasteRequestForm';
+import axios from 'axios';
 
 function Dashboard() {
   const [requests, setRequests] = useState([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const fetchRequests = async () => {
+    try {
+      const response = await axios.get('http://localhost:5000/api/waste-request', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      setRequests(response.data);
+    } catch (error) {
+      console.error('Error fetching requests:', error);
+    }
+  };
 
   useEffect(() => {
-    // Fetch requests from Flask backend
-    fetch('/api/requests', {
-      credentials: 'include' // to include cookies
-    })
-      .then(response => response.json())
-      .then(data => setRequests(data))
-      .catch(error => console.error('Error fetching requests:', error));
+    fetchRequests();
   }, []);
+
+  const handleNewRequest = () => {
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+  };
+
+  const handleRequestCreated = (newRequest) => {
+    setRequests(prevRequests => [newRequest, ...prevRequests]);
+  };
 
   const getStatusBadge = (status) => {
     const colors = {
@@ -47,7 +69,7 @@ function Dashboard() {
         </div>
 
         <div className="grid gap-6 mb-8 md:grid-cols-2 xl:grid-cols-3">
-          <Card className="cursor-pointer hover:bg-gray-50">
+          <Card className="cursor-pointer hover:bg-gray-50" onClick={handleNewRequest}>
             <div className="flex items-center">
               <div className="p-3 rounded-full bg-green-100 text-green-500 mr-4">
                 <HiPlus className="h-6 w-6" />
@@ -102,7 +124,7 @@ function Dashboard() {
                   </Table.Cell>
                   <Table.Cell>{request.waste_type}</Table.Cell>
                   <Table.Cell>{getStatusBadge(request.status)}</Table.Cell>
-                  <Table.Cell>{request.req_date}</Table.Cell>
+                  <Table.Cell>{new Date(request.req_date).toLocaleDateString()}</Table.Cell>
                   <Table.Cell>{request.quantity}kg</Table.Cell>
                 </Table.Row>
               ))}
@@ -110,6 +132,12 @@ function Dashboard() {
           </Table>
         </Card>
       </div>
+
+      <WasteRequestForm
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        onRequestCreated={handleRequestCreated}
+      />
     </div>
   );
 }
