@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button, Label, TextInput, Select, Textarea, Modal } from 'flowbite-react';
-import axios from 'axios';
+import axiosInstance from './axiosConfig';
 
 function WasteRequestForm({ isOpen, onClose, onRequestCreated }) {
   const [formData, setFormData] = useState({
@@ -25,15 +25,24 @@ function WasteRequestForm({ isOpen, onClose, onRequestCreated }) {
     setError('');
 
     try {
-      const response = await axios.post('http://localhost:5000/api/waste-request/create', formData, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      onRequestCreated(response.data);
-      onClose();
+      const response = await axiosInstance.post('/api/waste-request/create', formData);
+      if (response.data) {
+        onRequestCreated(response.data);
+        onClose();
+        // Reset form
+        setFormData({
+          wasteType: '',
+          quantity: '',
+          description: '',
+        });
+      }
     } catch (error) {
-      setError(error.response?.data?.error || 'An error occurred while submitting the request');
+      console.error('Error:', error);
+      setError(
+        error.response?.data?.error || 
+        error.message || 
+        'An error occurred while submitting the request. Please try again.'
+      );
     } finally {
       setIsLoading(false);
     }
@@ -82,7 +91,11 @@ function WasteRequestForm({ isOpen, onClose, onRequestCreated }) {
               onChange={handleChange}
             />
           </div>
-          {error && <p className="text-red-500">{error}</p>}
+          {error && (
+            <div className="p-4 text-sm text-red-800 rounded-lg bg-red-50">
+              {error}
+            </div>
+          )}
         </form>
       </Modal.Body>
       <Modal.Footer>

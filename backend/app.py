@@ -5,7 +5,7 @@ from flask_cors import CORS
 import pymysql
 from models import db, Admin
 from config import Config
-from routes import auth_bp
+from routes import auth_bp, waste_request_bp
 from flask_jwt_extended import JWTManager
 import logging
 
@@ -26,10 +26,9 @@ def test_db_connection():
 
 def create_app(config_class=Config):
     app = Flask(__name__)
-    CORS(app, resources={r"/api/*": {"origins": "http://localhost:3000"}})
     
-    # Set up logging
-    logging.basicConfig(level=logging.DEBUG)
+    # Configure CORS
+    CORS(app, resources={r"/api/*": {"origins": "http://localhost:3000"}}, supports_credentials=True)
     
     # Load configuration
     app.config.from_object(config_class)
@@ -40,8 +39,12 @@ def create_app(config_class=Config):
     bcrypt = Bcrypt(app)
     jwt = JWTManager(app)
     
+    # Set up logging
+    logging.basicConfig(level=logging.DEBUG)
+    
     # Register blueprints
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
+    app.register_blueprint(waste_request_bp, url_prefix='/api/waste-request')
     
     @app.route('/')
     def index():

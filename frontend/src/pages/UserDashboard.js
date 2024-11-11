@@ -1,20 +1,28 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Button, Table, Badge } from 'flowbite-react';
+import { Card, Button, Table, Badge, Modal, Label, Select, Textarea } from 'flowbite-react';
 import { HiPlus, HiClock, HiUser, HiBell, HiOutlineArrowRight } from 'react-icons/hi';
-import WasteRequestForm from './WasteRequestForm';
 import axios from 'axios';
+
+const axiosInstance = axios.create({
+  baseURL: 'http://localhost:5000/api',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
 
 function Dashboard() {
   const [requests, setRequests] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    wasteType: '',
+    description: '',
+  });
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const fetchRequests = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/waste-request', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
+      const response = await axiosInstance.get('/waste-request');
       setRequests(response.data);
     } catch (error) {
       console.error('Error fetching requests:', error);
@@ -31,10 +39,39 @@ function Dashboard() {
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
+    setFormData({ wasteType: '', description: '' });
+    setError('');
   };
 
-  const handleRequestCreated = (newRequest) => {
-    setRequests(prevRequests => [newRequest, ...prevRequests]);
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prevState => ({
+      ...prevState,
+      [name]: value
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError('');
+
+    try {
+      const response = await axiosInstance.post('/waste-request/create', formData);
+      if (response.data) {
+        setRequests(prevRequests => [response.data, ...prevRequests]);
+        handleCloseModal();
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      setError(
+        error.response?.data?.error || 
+        error.message || 
+        'An error occurred while submitting the request. Please try again.'
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const getStatusBadge = (status) => {
@@ -44,7 +81,7 @@ function Dashboard() {
       'Completed': 'info'
     };
     return (
-      <Badge color={colors[status]} className="w-24 justify-center">
+      <Badge color={colors[status]} size="sm">
         {status}
       </Badge>
     );
@@ -114,7 +151,6 @@ function Dashboard() {
               <Table.HeadCell>Type</Table.HeadCell>
               <Table.HeadCell>Status</Table.HeadCell>
               <Table.HeadCell>Date</Table.HeadCell>
-              <Table.HeadCell>Quantity</Table.HeadCell>
             </Table.Head>
             <Table.Body className="divide-y">
               {requests.map((request) => (
@@ -125,7 +161,6 @@ function Dashboard() {
                   <Table.Cell>{request.waste_type}</Table.Cell>
                   <Table.Cell>{getStatusBadge(request.status)}</Table.Cell>
                   <Table.Cell>{new Date(request.req_date).toLocaleDateString()}</Table.Cell>
-                  <Table.Cell>{request.quantity}kg</Table.Cell>
                 </Table.Row>
               ))}
             </Table.Body>
@@ -133,11 +168,52 @@ function Dashboard() {
         </Card>
       </div>
 
-      <WasteRequestForm
-        isOpen={isModalOpen}
-        onClose={handleCloseModal}
-        onRequestCreated={handleRequestCreated}
-      />
+      <Modal show={isModalOpen} onClose={handleCloseModal}>
+        <Modal.Header>Create Waste Collection Request</Modal.Header>
+        <Modal.Body>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <Label htmlFor="wasteType" value="Waste Type" />
+              <Select
+                id="wasteType"
+                name="wasteType"
+                required
+                value={formData.wasteType}
+                onChange={handleChange}
+              >
+                <option value="">Select waste type</option>
+                <option value="Household">Household</option>
+                <option value="Commercial">Commercial</option>
+                <option value="Industrial">Industrial</option>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="description" value="Description (optional)" />
+              <Textarea
+                id="description"
+                name="description"
+                placeholder="Provide additional details about the waste"
+                rows={4}
+                value={formData.description}
+                onChange={handleChange}
+              />
+            </div>
+            {error && (
+              <div className="p-4 text-sm text-red-800 rounded-lg bg-red-50">
+                {error}
+              </div>
+            )}
+          </form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button onClick={handleSubmit} disabled={isLoading}>
+            {isLoading ? "Submitting..." : "Submit Request"}
+          </Button>
+          <Button color="gray" onClick={handleCloseModal}>
+            Cancel
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 }

@@ -76,8 +76,9 @@ class WasteRequest(db.Model):
     status = db.Column(db.String(20), nullable=False)
     waste_type = db.Column(db.String(50), nullable=False)
     admin_id = db.Column(db.String(50), db.ForeignKey('admin.admin_id'), nullable=False)
-    vehicle_id = db.Column(db.String(50), db.ForeignKey('vehicle.vehicle_id'), nullable=False)
+    vehicle_id = db.Column(db.String(50), db.ForeignKey('vehicle.vehicle_id'), nullable=True)
     user_id = db.Column(db.String(50), db.ForeignKey('user.user_id'), nullable=False)
+    notification = db.Column(db.Boolean, default=True)
     
     # Relationships
     waste_collection = db.relationship('WasteCollection', backref='waste_request', lazy=True, uselist=False)
