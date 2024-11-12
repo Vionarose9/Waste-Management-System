@@ -5,9 +5,12 @@ from flask_cors import CORS
 import pymysql
 from models import db, Admin
 from config import Config
-from routes import auth_bp, waste_request_bp
+from routes import auth_bp
 from flask_jwt_extended import JWTManager
 import logging
+from routes.waste_request_routes import waste_request_bp
+
+
 
 def test_db_connection():
     try:
@@ -28,7 +31,13 @@ def create_app(config_class=Config):
     app = Flask(__name__)
     
     # Configure CORS
-    CORS(app, resources={r"/api/*": {"origins": "http://localhost:3000"}}, supports_credentials=True)
+    CORS(app, 
+     resources={r"/*": {
+         "origins": "*",
+         "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+         "allow_headers": ["Content-Type", "Authorization", "Access-Control-Allow-Credentials"],
+         "supports_credentials": True
+     }})
     
     # Load configuration
     app.config.from_object(config_class)
@@ -44,8 +53,8 @@ def create_app(config_class=Config):
     
     # Register blueprints
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
-    app.register_blueprint(waste_request_bp, url_prefix='/api/waste-request')
-    
+    app.register_blueprint(waste_request_bp, url_prefix='/api/waste-requests')
+
     @app.route('/')
     def index():
         return "Flask server is running!"

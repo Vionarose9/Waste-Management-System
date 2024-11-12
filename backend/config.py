@@ -1,9 +1,16 @@
 import os
 from datetime import timedelta
+from urllib.parse import quote_plus
 
 class Config:
-    SECRET_KEY = os.environ.get('SECRET_KEY') or 'your-secret-key'
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'mysql+pymysql://username:password@localhost/waste_management_system'
+    DB_PASSWORD = 'root'
+    ENCODED_PASSWORD = quote_plus(DB_PASSWORD)
+    SQLALCHEMY_DATABASE_URI = f"mysql+pymysql://root:{ENCODED_PASSWORD}@localhost:3306/waste_management_system"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or 'your-jwt-secret-key'
+    SECRET_KEY = os.environ.get('SECRET_KEY') or 'your-secret-key-here'
+    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or 'your-jwt-secret-key-here'
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=1)
+
+    @staticmethod
+    def init_app(app):
+        pass

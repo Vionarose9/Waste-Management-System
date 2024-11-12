@@ -1,54 +1,67 @@
 from flask import Blueprint, request, jsonify
-from flask_jwt_extended import jwt_required, get_jwt_identity
 from models import db, WasteRequest, User, Admin
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime
-import uuid
 
 waste_request_bp = Blueprint('waste_request', __name__)
 
-@waste_request_bp.route('/', methods=['GET'])
+@waste_request_bp.route('/list', methods=['GET'])
 @jwt_required()
-def get_user_requests():
-    current_user_id = get_jwt_identity()
-    user_requests = WasteRequest.query.filter_by(user_id=current_user_id).all()
-    requests_data = []
-    for req in user_requests:
-        requests_data.append({
+def get_waste_requests():
+    try:
+        user_id = get_jwt_identity()
+        requests = WasteRequest.query.filter_by(user_id=user_id).all()
+        return jsonify([{
             'req_id': req.req_id,
-            'waste_type': req.waste_type,
+            'req_date': req.req_date.isoformat(),
             'status': req.status,
-            'req_date': req.req_date.isoformat()
-        })
-    return jsonify(requests_data), 200
+            'waste_type': req.waste_type
+        } for req in requests]), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
-@waste_request_bp.route('/create', methods=['POST'])
+@waste_request_bp.route('/new', methods=['POST'])
 @jwt_required()
 def create_waste_request():
-    current_user_id = get_jwt_identity()
-    data = request.get_json()
+    try:
+        user_id = get_jwt_identity()
+        data = request.get_json()
 
-    user = User.query.get(current_user_id)
-    if not user:
-        return jsonify({"msg": "User not found"}), 404
+        if not data or 'req_date' not in data or 'waste_type' not in data:
+            return jsonify({'error': 'Missing required fields'}), 422
 
-    admin = Admin.query.filter_by(centre_id=user.centre_id).first()
-    if not admin:
-        return jsonify({"msg": "No admin found for the user's centre"}), 404
+        # Get the latest req_id
+        latest_request = WasteRequest.query.order_by(WasteRequest.req_id.desc()).first()
+        new_req_id = str(int(latest_request.req_id) + 1).zfill(5) if latest_request else '00001'
 
-    new_request = WasteRequest(
-        req_id=str(uuid.uuid4()),
-        req_date=datetime.utcnow(),
-        status='Pending',
-        waste_type=data['wasteType'],
-        admin_id=admin.admin_id,
-        user_id=current_user_id,
-        notification=True
-    )
+        # Get the user's centre_id
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
 
-    db.session.add(new_request)
-    db.session.commit()
+        # Find an admin with the same centre_id
+        admin = Admin.query.filter_by(centre_id=user.centre_id).first()
+        if not admin:
+            return jsonify({'error': 'No admin found for this centre'}), 404
 
-    return jsonify({
-        'message': 'Waste collection request created successfully',
-        'request_id': new_request.req_id
-    }), 201
+        new_request = WasteRequest(
+            req_id=new_req_id,
+            req_date=datetime.strptime(data['req_date'], '%Y-%m-%d'),
+            status='Pending',
+            waste_type=data['waste_type'],
+            user_id=user_id,
+            admin_id=admin.admin_id,
+            notification=True
+        )
+
+        db.session.add(new_request)
+        db.session.commit()
+
+        return jsonify({
+            'message': 'Waste request created successfully',
+            'req_id': new_request.req_id
+        }), 201
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500

@@ -1,11 +1,17 @@
 from flask import request, jsonify
 from flask_bcrypt import Bcrypt
-from models import db, User, UserPhoneNumber,Admin
+from models import db, User, UserPhoneNumber, Admin
 from . import auth_bp
-import jwt  # Add this import
 from datetime import datetime, timedelta
 from config import Config
 import logging
+from flask_jwt_extended import (
+    jwt_required, 
+    create_access_token,
+    get_jwt_identity,
+    get_jwt,
+    JWTManager
+)
 
 bcrypt = Bcrypt()
 
@@ -20,18 +26,6 @@ def signup():
 
     if data['password'] != data['confirmPassword']:
         return jsonify({'error': 'Passwords do not match'}), 400
-
-    if len(data['firstName']) < 2 or len(data['lastName']) < 2:
-        return jsonify({'error': 'First and last name must be at least 2 characters'}), 400
-
-    if len(data['userId']) < 4:
-        return jsonify({'error': 'User ID must be at least 4 characters'}), 400
-
-    if len(data['password']) < 6:
-        return jsonify({'error': 'Password must be at least 6 characters'}), 400
-
-    if not data['phoneNumber'].isdigit() or len(data['phoneNumber']) != 10:
-        return jsonify({'error': 'Phone number must be 10 digits'}), 400
 
     try:
         existing_user = User.query.filter_by(user_id=data['userId']).first()
@@ -51,7 +45,6 @@ def signup():
             centre_id=int(data['centreId'])
         )
 
-        # Create new user phone number
         new_phone_number = UserPhoneNumber(
             user_id=data['userId'],
             phone_number=data['phoneNumber']
@@ -60,12 +53,18 @@ def signup():
         db.session.add(new_user)
         db.session.add(new_phone_number)
         db.session.commit()
-        return jsonify({'message': 'User created successfully'}), 201
+        
+        # Create access token
+        access_token = create_access_token(identity=data['userId'])
+        
+        return jsonify({
+            'message': 'User created successfully',
+            'token': access_token
+        }), 201
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': f'An error occurred while creating the user: {str(e)}'}), 500
-    
-    
+
 @auth_bp.route('/login', methods=['POST'])
 def login():
     data = request.json
@@ -76,14 +75,11 @@ def login():
     user = User.query.filter_by(user_id=data['userId']).first()
 
     if user and bcrypt.check_password_hash(user.password, data['password']):
-        token = jwt.encode({
-            'user_id': user.user_id,
-            'exp': datetime.utcnow() + timedelta(hours=24)
-        }, Config.SECRET_KEY, algorithm='HS256')
+        access_token = create_access_token(identity=user.user_id)
 
         return jsonify({
             'message': 'Login successful',
-            'token': token,
+            'token': access_token,
             'user': {
                 'userId': user.user_id,
                 'firstName': user.first_name,
@@ -96,9 +92,6 @@ def login():
         }), 200
     else:
         return jsonify({'error': 'Invalid userId or password'}), 401
-    
-
-
 
 @auth_bp.route('/admin-login', methods=['POST'])
 def admin_login():
@@ -110,14 +103,11 @@ def admin_login():
     admin = Admin.query.filter_by(admin_id=data['adminId']).first()
 
     if admin and bcrypt.check_password_hash(admin.password, data['password']):
-        token = jwt.encode({
-            'admin_id': admin.admin_id,
-            'exp': datetime.utcnow() + timedelta(hours=24)
-        }, Config.SECRET_KEY, algorithm='HS256')
+        access_token = create_access_token(identity=admin.admin_id)
 
         return jsonify({
             'message': 'Login successful',
-            'token': token,
+            'token': access_token,
             'admin': {
                 'adminId': admin.admin_id,
                 'adminName': admin.admin_name,
@@ -126,8 +116,58 @@ def admin_login():
         }), 200
     else:
         return jsonify({'error': 'Invalid adminId or password'}), 401
-    
 
+@auth_bp.route('/logout', methods=['POST'])
+@jwt_required()
+def logout():
+    try:
+        response = jsonify({"message": "Successfully logged out"})
+        return response, 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@auth_bp.route('/profile', methods=['GET'])
+@jwt_required()
+def get_profile():
+    try:
+        current_user_id = get_jwt_identity()
+        user = User.query.filter_by(user_id=current_user_id).first()
+        
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+            
+        phone_number = UserPhoneNumber.query.filter_by(user_id=current_user_id).first()
+        
+        return jsonify({
+            "userId": user.user_id,
+            "firstName": user.first_name,
+            "lastName": user.last_name,
+            "city": user.city,
+            "street": user.street,
+            "landmark": user.landmark,
+            "centreId": user.centre_id,
+            "phoneNumber": phone_number.phone_number if phone_number else None
+        }), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@auth_bp.route('/admin-profile', methods=['GET'])
+@jwt_required()
+def get_admin_profile():
+    try:
+        current_admin_id = get_jwt_identity()
+        admin = Admin.query.filter_by(admin_id=current_admin_id).first()
+        
+        if not admin:
+            return jsonify({"error": "Admin not found"}), 404
+            
+        return jsonify({
+            "adminId": admin.admin_id,
+            "adminName": admin.admin_name,
+            "centreId": admin.centre_id,
+        }), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @auth_bp.route('/test-connection', methods=['GET'])
 def test_connection():
