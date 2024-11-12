@@ -1,31 +1,26 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Button, Table, Badge, Modal, Label, Select, Textarea } from 'flowbite-react';
+import { Card, Button, Table, Badge } from 'flowbite-react';
 import { HiPlus, HiClock, HiUser, HiBell, HiOutlineArrowRight } from 'react-icons/hi';
 import axios from 'axios';
+import WasteRequestForm from './WasteRequestForm';
 
-const axiosInstance = axios.create({
-  baseURL: 'http://localhost:5000/api',
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
-
-function Dashboard() {
+function UserDashboard() {
   const [requests, setRequests] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [formData, setFormData] = useState({
-    wasteType: '',
-    description: '',
-  });
   const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
 
   const fetchRequests = async () => {
     try {
-      const response = await axiosInstance.get('/waste-request');
+      const token = localStorage.getItem('token');
+      const response = await axios.get('http://localhost:5000/api/waste-request/', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       setRequests(response.data);
     } catch (error) {
       console.error('Error fetching requests:', error);
+      setError('Failed to fetch waste requests. Please try again later.');
     }
   };
 
@@ -39,39 +34,11 @@ function Dashboard() {
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
-    setFormData({ wasteType: '', description: '' });
-    setError('');
   };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prevState => ({
-      ...prevState,
-      [name]: value
-    }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError('');
-
-    try {
-      const response = await axiosInstance.post('/waste-request/create', formData);
-      if (response.data) {
-        setRequests(prevRequests => [response.data, ...prevRequests]);
-        handleCloseModal();
-      }
-    } catch (error) {
-      console.error('Error:', error);
-      setError(
-        error.response?.data?.error || 
-        error.message || 
-        'An error occurred while submitting the request. Please try again.'
-      );
-    } finally {
-      setIsLoading(false);
-    }
+  const handleRequestCreated = (newRequest) => {
+    setRequests(prevRequests => [newRequest, ...prevRequests]);
+    fetchRequests(); // Refresh the list after creating a new request
   };
 
   const getStatusBadge = (status) => {
@@ -81,7 +48,7 @@ function Dashboard() {
       'Completed': 'info'
     };
     return (
-      <Badge color={colors[status]} size="sm">
+      <Badge color={colors[status] || 'default'}>
         {status}
       </Badge>
     );
@@ -145,6 +112,11 @@ function Dashboard() {
 
         <Card>
           <h2 className="text-xl font-semibold mb-4">Your Recent Requests</h2>
+          {error && (
+            <div className="p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50">
+              {error}
+            </div>
+          )}
           <Table>
             <Table.Head>
               <Table.HeadCell>Request ID</Table.HeadCell>
@@ -168,54 +140,13 @@ function Dashboard() {
         </Card>
       </div>
 
-      <Modal show={isModalOpen} onClose={handleCloseModal}>
-        <Modal.Header>Create Waste Collection Request</Modal.Header>
-        <Modal.Body>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <Label htmlFor="wasteType" value="Waste Type" />
-              <Select
-                id="wasteType"
-                name="wasteType"
-                required
-                value={formData.wasteType}
-                onChange={handleChange}
-              >
-                <option value="">Select waste type</option>
-                <option value="Household">Household</option>
-                <option value="Commercial">Commercial</option>
-                <option value="Industrial">Industrial</option>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="description" value="Description (optional)" />
-              <Textarea
-                id="description"
-                name="description"
-                placeholder="Provide additional details about the waste"
-                rows={4}
-                value={formData.description}
-                onChange={handleChange}
-              />
-            </div>
-            {error && (
-              <div className="p-4 text-sm text-red-800 rounded-lg bg-red-50">
-                {error}
-              </div>
-            )}
-          </form>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button onClick={handleSubmit} disabled={isLoading}>
-            {isLoading ? "Submitting..." : "Submit Request"}
-          </Button>
-          <Button color="gray" onClick={handleCloseModal}>
-            Cancel
-          </Button>
-        </Modal.Footer>
-      </Modal>
+      <WasteRequestForm
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        onRequestCreated={handleRequestCreated}
+      />
     </div>
   );
 }
 
-export default Dashboard;
+export default UserDashboard;

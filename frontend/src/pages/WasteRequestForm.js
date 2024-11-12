@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
-import { Button, Label, TextInput, Select, Textarea, Modal } from 'flowbite-react';
+import { Button, Label, Select, Textarea, Modal } from 'flowbite-react';
 import axiosInstance from './axiosConfig';
 
 function WasteRequestForm({ isOpen, onClose, onRequestCreated }) {
   const [formData, setFormData] = useState({
     wasteType: '',
-    quantity: '',
     description: '',
   });
   const [error, setError] = useState('');
@@ -32,7 +31,6 @@ function WasteRequestForm({ isOpen, onClose, onRequestCreated }) {
         // Reset form
         setFormData({
           wasteType: '',
-          quantity: '',
           description: '',
         });
       }
@@ -67,18 +65,6 @@ function WasteRequestForm({ isOpen, onClose, onRequestCreated }) {
               <option value="Commercial">Commercial</option>
               <option value="Industrial">Industrial</option>
             </Select>
-          </div>
-          <div>
-            <Label htmlFor="quantity" value="Quantity (in kg)" />
-            <TextInput
-              id="quantity"
-              name="quantity"
-              type="number"
-              placeholder="Enter quantity in kg"
-              required
-              value={formData.quantity}
-              onChange={handleChange}
-            />
           </div>
           <div>
             <Label htmlFor="description" value="Description (optional)" />
