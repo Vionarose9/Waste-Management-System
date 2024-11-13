@@ -15,9 +15,7 @@ def handle_preflight():
         response.headers.add("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
         response.headers.add("Access-Control-Allow-Credentials", "true")
         return response
-@admin_notification_bp.route('/test', methods=['GET'])
-def get_waste_test():
-    return jsonify({'msg': "hi"}), 200
+
 
 @admin_notification_bp.route('/getnotif', methods=['GET', 'POST'])
 @jwt_required()
@@ -27,7 +25,7 @@ def handle_notifications():
         admin = Admin.query.get(admin_id)
         print(f"JWT Identity: {admin_id}")
         if not admin:
-            return jsonify({'error': 'Admin not found'}), 404
+            return jsonify({'error': 'Admin not found'}), 402
 
         if request.method == 'GET':
             # Get unread waste requests for admin's centre
