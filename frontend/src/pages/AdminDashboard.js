@@ -26,7 +26,7 @@ export default function Dashboard() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [error, setError] = useState('');
 
-  // Mock data
+  //Mock data (you can replace this with actual API calls later)
   const requests = [
     { id: 'REQ001', user: 'John Doe', type: 'Household', status: 'Pending', date: '2024-11-07', quantity: '50kg', location: '123 Main St' },
     { id: 'REQ002', user: 'Jane Smith', type: 'Commercial', status: 'In Progress', date: '2024-11-08', quantity: '200kg', location: '456 Oak Ave' },
@@ -49,88 +49,51 @@ export default function Dashboard() {
     }
   };
 
+  // useEffect hook removed
+
   const fetchNotifications = async () => {
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        setError('No authentication token found');
-        return;
-      }
-  
-      const response = await fetch('http://localhost:5000/api/admin/notifications', {
+      const response = await fetch('http://localhost:5000/api/admin/getnotif', {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
           'Content-Type': 'application/json',
-          'Accept': 'application/json'
         },
-        credentials: 'include'  // Include credentials if using cookies
+        credentials: 'include'
       });
-  
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-  
+
       const data = await response.json();
-      setNotifications(data);
+      setNotifications(data.notifications);
+      setNotificationCount(data.count);
       setError('');
     } catch (error) {
       console.error('Fetch error:', error);
       setError('Failed to fetch notifications. Please try again later.');
     }
   };
-  
-  const fetchNotificationCount = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        console.error('No authentication token found');
-        return;
-      }
-  
-      const response = await fetch('http://localhost:5000/api/admin/notifications/count', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        credentials: 'include'
-      });
-  
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-  
-      const data = await response.json();
-      setNotificationCount(data.count);
-    } catch (error) {
-      console.error('Failed to fetch notification count:', error);
-    }
-  };
-  
+
+  // fetchNotificationCount function removed
+
   const markAsRead = async (reqId) => {
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        setError('No authentication token found');
-        return;
-      }
-  
-      const response = await fetch(`http://localhost:5000/api/admin/notifications/${reqId}/mark-read`, {
+      const response = await fetch('http://localhost:5000/api/admin/getnotif', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
           'Content-Type': 'application/json',
-          'Accept': 'application/json'
         },
-        credentials: 'include'
+        credentials: 'include',
+        body: JSON.stringify({ req_id: reqId })
       });
-  
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-  
+
       setNotifications(notifications.filter(n => n.req_id !== reqId));
       setNotificationCount(prev => prev - 1);
       setError('');
@@ -139,6 +102,7 @@ export default function Dashboard() {
       setError('Failed to mark notification as read. Please try again.');
     }
   };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Fixed Sidebar */}
@@ -240,7 +204,10 @@ export default function Dashboard() {
                               Type: {notification.waste_type}
                             </p>
                             <p className="text-sm text-gray-600">
-                              Date: {new Date(notification.req_date).toLocaleDateString()}
+                              Date: {new Date(notification.req_date).toLocaleString()}
+                            </p>
+                            <p className="text-sm text-gray-600">
+                              Status: {notification.status}
                             </p>
                             <p className="text-sm text-gray-600">
                               Address: {notification.user.address}
