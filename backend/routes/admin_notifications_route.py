@@ -1,24 +1,27 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request,make_response
 from models import db, WasteRequest, Admin
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from flask_cors import cross_origin
+from . import admin_notification_bp
 
-admin_notification_bp = Blueprint('admin_notifications', __name__)
+# admin_notification_bp = Blueprint('admin_notifications', __name__)
+
+@admin_notification_bp.before_request
+def handle_preflight():
+    if request.method == "OPTIONS":
+        response = make_response()
+        response.headers.add("Access-Control-Allow-Origin", "http://localhost:3000")
+        response.headers.add("Access-Control-Allow-Headers", "Content-Type, Authorization")
+        response.headers.add("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        response.headers.add("Access-Control-Allow-Credentials", "true")
+        return response
+@admin_notification_bp.route('/test', methods=['GET'])
+def get_waste_test():
+    return jsonify({'msg': "hi"}), 200
 
 @admin_notification_bp.route('/getnotif', methods=['GET', 'POST'])
 @jwt_required()
 def handle_notifications():
-# Handle preflight OPTIONS request
-    if request.method == 'OPTIONS':
-        response = jsonify({'message': 'OK'})
-        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
-        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
-        response.headers.add('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
-        return response, 200
-        
-    # For actual requests, require JWT
-    if request.method != 'OPTIONS' and not get_jwt_identity():
-        return jsonify({'error': 'Unauthorized'}), 401
     try:
         admin_id = get_jwt_identity()
         admin = Admin.query.get(admin_id)

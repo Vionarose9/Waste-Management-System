@@ -32,7 +32,7 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401 || error.response?.status === 422) {
       localStorage.removeItem('token');
-      window.location.href = '/login';
+      window.location.href = '/user/login';
     }
     return Promise.reject(error);
   }
@@ -97,7 +97,7 @@ export default function Dashboard() {
         return;
       }
 
-      const response = await api.get('/api/waste-requests/list', {
+      const response = await api.get('/api/waste/list', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -123,7 +123,7 @@ export default function Dashboard() {
         return;
       }
 
-      await api.post('/api/waste-requests/new', {
+      await api.post('/api/waste/new', {
         req_date: reqDate,
         waste_type: wasteType,
       }, {
@@ -270,11 +270,10 @@ export default function Dashboard() {
                     </td>
                     <td className="px-6 py-4">{request.waste_type}</td>
                     <td className="px-6 py-4">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        request.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-                        request.status === 'Approved' ? 'bg-green-100 text-green-800' :
-                        'bg-red-100 text-red-800'
-                      }`}>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${request.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
+                          request.status === 'Approved' ? 'bg-green-100 text-green-800' :
+                            'bg-red-100 text-red-800'
+                        }`}>
                         {request.status}
                       </span>
                     </td>
