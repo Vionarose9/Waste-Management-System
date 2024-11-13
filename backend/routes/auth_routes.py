@@ -151,23 +151,7 @@ def get_profile():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@auth_bp.route('/admin-profile', methods=['GET'])
-@jwt_required()
-def get_admin_profile():
-    try:
-        current_admin_id = get_jwt_identity()
-        admin = Admin.query.filter_by(admin_id=current_admin_id).first()
-        
-        if not admin:
-            return jsonify({"error": "Admin not found"}), 404
-            
-        return jsonify({
-            "adminId": admin.admin_id,
-            "adminName": admin.admin_name,
-            "centreId": admin.centre_id,
-        }), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+
 
 @auth_bp.route('/test-connection', methods=['GET'])
 def test_connection():
