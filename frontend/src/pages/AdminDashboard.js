@@ -16,8 +16,12 @@ import {
   HiCog,
   HiBell,
   HiMenu,
-  HiX
+  HiX,
+  HiLogout
 } from 'react-icons/hi';
+import { useNavigate } from 'react-router-dom';
+import UsersList from './UserList';
+import RequestsTable from './RequestsTable';
 
 export default function Dashboard() {
   const [isSidebarOpen, setSidebarOpen] = useState(true);
@@ -25,31 +29,155 @@ export default function Dashboard() {
   const [notificationCount, setNotificationCount] = useState(0);
   const [showNotifications, setShowNotifications] = useState(false);
   const [error, setError] = useState('');
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [vehicles, setVehicles] = useState([]);
+  const [vehicleError, setVehicleError] = useState('');
+  const [users, setUsers] = useState([]);
+  const [userError, setUserError] = useState('');
+  const [updateMessage, setUpdateMessage] = useState('');
+  const [requests, setRequests] = useState([]);
+  const [requestError, setRequestError] = useState('');
 
-  //Mock data (you can replace this with actual API calls later)
-  const requests = [
-    { id: 'REQ001', user: 'John Doe', type: 'Household', status: 'Pending', date: '2024-11-07', quantity: '50kg', location: '123 Main St' },
-    { id: 'REQ002', user: 'Jane Smith', type: 'Commercial', status: 'In Progress', date: '2024-11-08', quantity: '200kg', location: '456 Oak Ave' },
-    { id: 'REQ003', user: 'Mike Johnson', type: 'Industrial', status: 'Completed', date: '2024-11-08', quantity: '500kg', location: '789 Pine Rd' }
-  ];
 
-  const vehicles = [
-    { id: 'VEH001', type: 'Truck', status: 'Available', driver: 'Steve Wilson', lastMaintenance: '2024-10-15' },
-    { id: 'VEH002', type: 'Van', status: 'On Route', driver: 'Sarah Brown', lastMaintenance: '2024-10-20' }
-  ];
+  const navigate = useNavigate();
+  useEffect(() => {
+    if (activeTab === 'requests') {
+      fetchRequests();
+    }
+  }, [activeTab]);
 
-  const getStatusBadgeColor = (status) => {
-    switch (status) {
-      case 'Pending': return 'warning';
-      case 'In Progress': return 'info';
-      case 'Completed': return 'success';
-      case 'Available': return 'success';
-      case 'On Route': return 'info';
-      default: return 'default';
+  const fetchRequests = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/admin/requests', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setRequests(data.requests || []);
+      setRequestError('');
+    } catch (error) {
+      console.error('Fetch error:', error);
+      setRequestError('Failed to fetch requests. Please try again later.');
     }
   };
 
-  // useEffect hook removed
+  useEffect(() => {
+    if (activeTab === 'vehicles') {
+      console.log('Fetching vehicles...'); // Debug log
+      fetchVehicles();
+    }
+  }, [activeTab]);
+
+  const fetchVehicles = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/vehicles/list', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('Vehicles data:', data.vehicles); // Updated console log
+      setVehicles(data.vehicles || []); // Updated setVehicles
+
+    } catch (error) {
+      console.error('Fetch error:', error);
+      setVehicleError('Failed to fetch vehicles. Please try again later.');
+    }
+  };
+  const handleUpdateVehicleStatus = async (vehicleId) => {
+    try {
+      const response = await fetch('http://localhost:5000/api/vehicles/update-status', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ vehicle_id: vehicleId })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setUpdateMessage(data.message);
+      fetchVehicles(); // Refresh the vehicle list
+    } catch (error) {
+      console.error('Update error:', error);
+      setVehicleError('Failed to update vehicle status. Please try again.');
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'users') {
+      fetchUsers();
+    }
+  }, [activeTab]);
+
+  const fetchUsers = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/admin/users', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setUsers(data.users || []);
+      setUserError('');
+    } catch (error) {
+      console.error('Fetch error:', error);
+      setUserError('Failed to fetch users. Please try again later.');
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/auth/admin-logout', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
+      });
+
+      if (response.ok) {
+        localStorage.removeItem('adminToken');
+        localStorage.removeItem('adminData');
+        navigate('/admin/login');
+      } else {
+        console.error('Logout failed');
+      }
+    } catch (error) {
+      console.error('Error during logout:', error);
+    }
+  };
 
   const fetchNotifications = async () => {
     try {
@@ -76,8 +204,6 @@ export default function Dashboard() {
     }
   };
 
-  // fetchNotificationCount function removed
-
   const markAsRead = async (reqId) => {
     try {
       const response = await fetch('http://localhost:5000/api/admin/getnotif', {
@@ -103,6 +229,165 @@ export default function Dashboard() {
     }
   };
 
+  const getStatusBadgeColor = (status) => {
+    switch (status) {
+      case 'Pending': return 'warning';
+      case 'In Progress': return 'info';
+      case 'Completed': return 'success';
+      case 'Available': return 'success';
+      case 'On Route': return 'info';
+      default: return 'default';
+    }
+  };
+
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'requests':
+        return <RequestsTable requests={requests} error={requestError} />;
+      case 'users':
+        return <UsersList users={users} error={userError} />;
+        case 'vehicles':
+          console.log('Rendering vehicles:', vehicles);
+          return (
+            <div className="bg-white rounded-lg shadow overflow-hidden">
+              <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-4">
+                <h5 className="text-lg font-bold text-white">Vehicle Status</h5>
+              </div>
+              <div className="p-4">
+                {vehicleError && (
+                  <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4" role="alert">
+                    <div className="font-bold">Error</div>
+                    <div>{vehicleError}</div>
+                  </div>
+                )}
+                {updateMessage && (
+                  <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4" role="alert">
+                    <div className="font-bold">Success</div>
+                    <div>{updateMessage}</div>
+                  </div>
+                )}
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse">
+                    <thead>
+                      <tr>
+                        <th className="px-4 py-2 text-left bg-gray-200 border border-gray-300">Vehicle ID</th>
+                        <th className="px-4 py-2 text-left bg-gray-200 border border-gray-300">Type</th>
+                        <th className="px-4 py-2 text-center bg-gray-200 border border-gray-300">Status</th>
+                        <th className="px-4 py-2 text-left bg-gray-200 border border-gray-300">Centre ID</th>
+                        <th className="px-4 py-2 text-center bg-gray-200 border border-gray-300">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {vehicles && vehicles.length > 0 ? (
+                        vehicles.map((vehicle) => (
+                          <tr key={vehicle.vehicle_id} className="border-b border-gray-300">
+                            <td className="px-4 py-2">{vehicle.vehicle_id}</td>
+                            <td className="px-4 py-2">{vehicle.vehicle_type}</td>
+                            <td className="px-4 py-2 text-center">
+                              <span className={`px-2 py-1 rounded-full text-black text-xs ${getStatusBadgeColor(vehicle.status)}`}>
+                                {vehicle.status}
+                              </span>
+                            </td>
+                            <td className="px-4 py-2">{vehicle.centre_id}</td>
+                            <td className="px-4 py-2 text-center">
+                              <button 
+                                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded text-xs"
+                                onClick={() => handleUpdateVehicleStatus(vehicle.vehicle_id)}
+                              >
+                                {vehicle.status === 'active' ? 'Deactivate' : 'Activate'}
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td className="px-4 py-2 text-center" colSpan={5}>No vehicles found</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+      );
+      default:
+        return (
+          <>
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
+              <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-4 text-white">
+                <h3 className="text-sm font-medium opacity-80">Total Requests</h3>
+                <p className="text-2xl font-bold mt-2">156</p>
+                <p className="text-sm mt-2 text-blue-100">+12% from last month</p>
+              </div>
+              <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg p-4 text-white">
+                <h3 className="text-sm font-medium opacity-80">Active Vehicles</h3>
+                <p className="text-2xl font-bold mt-2">8</p>
+                <p className="text-sm mt-2 text-purple-100">All vehicles operational</p>
+              </div>
+              <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg p-4 text-white">
+                <h3 className="text-sm font-medium opacity-80">Collection Rate</h3>
+                <p className="text-2xl font-bold mt-2">94%</p>
+                <p className="text-sm mt-2 text-green-100">Above target</p>
+              </div>
+              <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg p-4 text-white">
+                <h3 className="text-sm font-medium opacity-80">Total Users</h3>
+                <p className="text-2xl font-bold mt-2">1,204</p>
+                <p className="text-sm mt-2 text-orange-100">+85 this month</p>
+              </div>
+            </div>
+
+            {/* Recent Requests Table */}
+            <div className="bg-white rounded-lg shadow mb-6 overflow-hidden">
+              <div className="bg-gradient-to-r from-purple-600 to-purple-700 p-4">
+                <h5 className="text-lg font-bold text-white">Recent Collection Requests</h5>
+              </div>
+              <div className="p-4">
+                <div className="overflow-x-auto">
+                  <Table>
+                    <Table.Head>
+                      <Table.HeadCell>Request ID</Table.HeadCell>
+                      <Table.HeadCell>User</Table.HeadCell>
+                      <Table.HeadCell>Type</Table.HeadCell>
+                      <Table.HeadCell>Status</Table.HeadCell>
+                      <Table.HeadCell>Date</Table.HeadCell>
+                      <Table.HeadCell>Quantity</Table.HeadCell>
+                      <Table.HeadCell>Location</Table.HeadCell>
+                      <Table.HeadCell>Actions</Table.HeadCell>
+                    </Table.Head>
+                    <Table.Body>
+                      {[
+                        { id: 'REQ001', user: 'John Doe', type: 'Household', status: 'Pending', date: '2024-11-07', quantity: '50kg', location: '123 Main St' },
+                        { id: 'REQ002', user: 'Jane Smith', type: 'Commercial', status: 'In Progress', date: '2024-11-08', quantity: '200kg', location: '456 Oak Ave' },
+                        { id: 'REQ003', user: 'Mike Johnson', type: 'Industrial', status: 'Completed', date: '2024-11-08', quantity: '500kg', location: '789 Pine Rd' }
+                      ].map((request) => (
+                        <Table.Row key={request.id}>
+                          <Table.Cell>{request.id}</Table.Cell>
+                          <Table.Cell>{request.user}</Table.Cell>
+                          <Table.Cell>{request.type}</Table.Cell>
+                          <Table.Cell>
+                            <Badge color={getStatusBadgeColor(request.status)}>
+                              {request.status}
+                            </Badge>
+                          </Table.Cell>
+                          <Table.Cell>{request.date}</Table.Cell>
+                          <Table.Cell>{request.quantity}</Table.Cell>
+                          <Table.Cell>{request.location}</Table.Cell>
+                          <Table.Cell>
+                            <Button size="xs" color="purple">Assign Vehicle</Button>
+                          </Table.Cell>
+                        </Table.Row>
+                      ))}
+                    </Table.Body>
+                  </Table>
+                </div>
+              </div>
+            </div>
+          </>
+        );
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Fixed Sidebar */}
@@ -112,26 +397,22 @@ export default function Dashboard() {
             <span className="text-xl font-bold">Waste Management</span>
           </div>
           <nav className="flex-1 space-y-1 px-2 py-4">
-            <button className="flex w-full items-center rounded-lg px-4 py-2 text-white hover:bg-purple-600">
-              <HiChartPie className="mr-3 h-5 w-5" />
-              Dashboard
-            </button>
-            <button className="flex w-full items-center rounded-lg px-4 py-2 text-white hover:bg-purple-600">
-              <HiDocumentText className="mr-3 h-5 w-5" />
-              Requests
-            </button>
-            <button className="flex w-full items-center rounded-lg px-4 py-2 text-white hover:bg-purple-600">
-              <HiTruck className="mr-3 h-5 w-5" />
-              Vehicles
-            </button>
-            <button className="flex w-full items-center rounded-lg px-4 py-2 text-white hover:bg-purple-600">
-              <HiUsers className="mr-3 h-5 w-5" />
-              Users
-            </button>
-            <button className="flex w-full items-center rounded-lg px-4 py-2 text-white hover:bg-purple-600">
-              <HiCog className="mr-3 h-5 w-5" />
-              Settings
-            </button>
+            {[
+              { name: 'Dashboard', icon: HiChartPie, tab: 'dashboard' },
+              { name: 'Requests', icon: HiDocumentText, tab: 'requests' },
+              { name: 'Vehicles', icon: HiTruck, tab: 'vehicles' },
+              { name: 'Users', icon: HiUsers, tab: 'users' },
+              { name: 'Settings', icon: HiCog, tab: 'settings' },
+            ].map((item) => (
+              <button 
+                key={item.tab}
+                className={`flex w-full items-center rounded-lg px-4 py-2 text-white hover:bg-purple-600 ${activeTab === item.tab ? 'bg-purple-600' : ''}`}
+                onClick={() => setActiveTab(item.tab)}
+              >
+                <item.icon className="mr-3 h-5 w-5" />
+                {item.name}
+              </button>
+            ))}
           </nav>
         </div>
       </div>
@@ -232,115 +513,21 @@ export default function Dashboard() {
               <span className="ml-2 text-sm font-medium">Admin User</span>
             </div>
           </div>
+          <div className="flex items-center gap-4">
+            <Button
+              color="gray"
+              onClick={handleLogout}
+              className="flex items-center gap-2"
+            >
+              <HiLogout className="h-5 w-5" />
+              <span>Logout</span>
+            </Button>
+          </div>
         </Navbar>
 
         {/* Main Content Area */}
         <main className="flex-1 p-4 mt-16">
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
-            <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-4 text-white">
-              <h3 className="text-sm font-medium opacity-80">Total Requests</h3>
-              <p className="text-2xl font-bold mt-2">156</p>
-              <p className="text-sm mt-2 text-blue-100">+12% from last month</p>
-            </div>
-            <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg p-4 text-white">
-              <h3 className="text-sm font-medium opacity-80">Active Vehicles</h3>
-              <p className="text-2xl font-bold mt-2">8</p>
-              <p className="text-sm mt-2 text-purple-100">All vehicles operational</p>
-            </div>
-            <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg p-4 text-white">
-              <h3 className="text-sm font-medium opacity-80">Collection Rate</h3>
-              <p className="text-2xl font-bold mt-2">94%</p>
-              <p className="text-sm mt-2 text-green-100">Above target</p>
-            </div>
-            <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg p-4 text-white">
-              <h3 className="text-sm font-medium opacity-80">Total Users</h3>
-              <p className="text-2xl font-bold mt-2">1,204</p>
-              <p className="text-sm mt-2 text-orange-100">+85 this month</p>
-            </div>
-          </div>
-
-          {/* Recent Requests Table */}
-          <div className="bg-white rounded-lg shadow mb-6 overflow-hidden">
-            <div className="bg-gradient-to-r from-purple-600 to-purple-700 p-4">
-              <h5 className="text-lg font-bold text-white">Recent Collection Requests</h5>
-            </div>
-            <div className="p-4">
-              <div className="overflow-x-auto">
-                <Table>
-                  <Table.Head>
-                    <Table.HeadCell>Request ID</Table.HeadCell>
-                    <Table.HeadCell>User</Table.HeadCell>
-                    <Table.HeadCell>Type</Table.HeadCell>
-                    <Table.HeadCell>Status</Table.HeadCell>
-                    <Table.HeadCell>Date</Table.HeadCell>
-                    <Table.HeadCell>Quantity</Table.HeadCell>
-                    <Table.HeadCell>Location</Table.HeadCell>
-                    <Table.HeadCell>Actions</Table.HeadCell>
-                  </Table.Head>
-                  <Table.Body>
-                    {requests.map((request) => (
-                      <Table.Row key={request.id}>
-                        <Table.Cell>{request.id}</Table.Cell>
-                        <Table.Cell>{request.user}</Table.Cell>
-                        <Table.Cell>{request.type}</Table.Cell>
-                        <Table.Cell>
-                          <Badge color={getStatusBadgeColor(request.status)}>
-                            {request.status}
-                          </Badge>
-                        </Table.Cell>
-                        <Table.Cell>{request.date}</Table.Cell>
-                        <Table.Cell>{request.quantity}</Table.Cell>
-                        <Table.Cell>{request.location}</Table.Cell>
-                        <Table.Cell>
-                          <Button size="xs" color="purple">Assign Vehicle</Button>
-                        </Table.Cell>
-                      </Table.Row>
-                    ))}
-                  </Table.Body>
-                </Table>
-              </div>
-            </div>
-          </div>
-
-          {/* Vehicle Status Table */}
-          <div className="bg-white rounded-lg shadow overflow-hidden">
-            <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-4">
-              <h5 className="text-lg font-bold text-white">Vehicle Status</h5>
-            </div>
-            <div className="p-4">
-              <div className="overflow-x-auto">
-                <Table>
-                  <Table.Head>
-                    <Table.HeadCell>Vehicle ID</Table.HeadCell>
-                    <Table.HeadCell>Type</Table.HeadCell>
-                    <Table.HeadCell>Status</Table.HeadCell>
-                    <Table.HeadCell>Driver</Table.HeadCell>
-                    <Table.HeadCell>Last Maintenance</Table.HeadCell>
-                    <Table.HeadCell>Actions</Table.HeadCell>
-                  </Table.Head>
-                  <Table.Body>
-                    {vehicles.map((vehicle) => (
-                      <Table.Row key={vehicle.id}>
-                        <Table.Cell>{vehicle.id}</Table.Cell>
-                        <Table.Cell>{vehicle.type}</Table.Cell>
-                        <Table.Cell>
-                          <Badge color={getStatusBadgeColor(vehicle.status)}>
-                            {vehicle.status}
-                          </Badge>
-                        </Table.Cell>
-                        <Table.Cell>{vehicle.driver}</Table.Cell>
-                        <Table.Cell>{vehicle.lastMaintenance}</Table.Cell>
-                        <Table.Cell>
-                          <Button size="xs" color="blue">Update Status</Button>
-                        </Table.Cell>
-                      </Table.Row>
-                    ))}
-                  </Table.Body>
-                </Table>
-              </div>
-            </div>
-          </div>
+          {renderContent()}
         </main>
       </div>
     </div>

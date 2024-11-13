@@ -126,13 +126,13 @@ from models import db, Admin
 from config import Config
 from flask_jwt_extended import JWTManager
 import logging
-from routes import auth_bp, admin_notification_bp, waste_request_bp
+from routes import auth_bp, admin_notification_bp, waste_request_bp,vehicle_bp
 
 
 def test_db_connection():
     try:
         connection = pymysql.connect(
-            host="127.0.0.1", user="root", password="vijju@2004", port=3305
+            host="localhost", user="root", password="root", port=3306
         )
         print("Successfully connected to MySQL server!")
         connection.close()
@@ -188,6 +188,7 @@ def create_app(config_class=Config):
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
     app.register_blueprint(waste_request_bp, url_prefix="/api/waste")
     app.register_blueprint(admin_notification_bp, url_prefix="/api/admin")
+    app.register_blueprint(vehicle_bp, url_prefix='/api/vehicles')
 
     @app.route("/")
     def index():

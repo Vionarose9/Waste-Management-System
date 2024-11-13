@@ -126,6 +126,18 @@ def logout():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@auth_bp.route('/admin-logout', methods=['POST'])
+@jwt_required()
+def adminlogout():
+    try:
+        #
+        
+        response = jsonify({"message": "Successfully logged out"})
+        
+        return response, 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @auth_bp.route('/profile', methods=['GET'])
 @jwt_required()
 def get_profile():

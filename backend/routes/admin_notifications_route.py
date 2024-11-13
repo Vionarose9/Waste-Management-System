@@ -3,6 +3,8 @@ from models import db, WasteRequest, Admin
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from flask_cors import cross_origin
 from . import admin_notification_bp
+from models import db, User, Admin, UserPhoneNumber
+from sqlalchemy.orm import joinedload
 
 # admin_notification_bp = Blueprint('admin_notifications', __name__)
 
@@ -15,6 +17,84 @@ def handle_preflight():
         response.headers.add("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
         response.headers.add("Access-Control-Allow-Credentials", "true")
         return response
+
+
+@admin_notification_bp.route('/requests', methods=['GET'])
+@jwt_required()
+def get_requests():
+    try:
+        admin_id = get_jwt_identity()
+        admin = Admin.query.get(admin_id)
+        
+        if not admin:
+            return jsonify({'error': 'Admin not found'}), 404
+
+        # Use joinedload to fetch related WasteCollection in a single query
+        requests = WasteRequest.query.options(
+            joinedload(WasteRequest.waste_collection),
+            joinedload(WasteRequest.user)
+        ).filter_by(admin_id=admin_id).all()
+        
+        request_data = []
+        for request in requests:
+            request_info = {
+                'req_id': request.req_id,
+                'req_date': request.req_date.isoformat(),
+                'status': request.status,
+                'waste_type': request.waste_type,
+                'user': {
+                    'user_id': request.user.user_id,
+                    'first_name': request.user.first_name,
+                    'last_name': request.user.last_name
+                },
+                'collection': None
+            }
+            
+            if request.waste_collection:
+                request_info['collection'] = {
+                    'collection_id': request.waste_collection.collection_id,
+                    'collection_date': request.waste_collection.collection_date.isoformat(),
+                    'collection_quantity': request.waste_collection.collection_quantity
+                }
+            
+            request_data.append(request_info)
+        
+        return jsonify({
+            'requests': request_data
+        }), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@admin_notification_bp.route('/users', methods=['GET'])
+@jwt_required()
+def get_users():
+    try:
+        admin_id = get_jwt_identity()
+        admin = Admin.query.get(admin_id)
+        
+        if not admin:
+            return jsonify({'error': 'Admin not found'}), 404
+
+        users = User.query.filter_by(centre_id=admin.centre_id).all()
+        
+        user_data = []
+        for user in users:
+            phone_number = UserPhoneNumber.query.filter_by(user_id=user.user_id).first()
+            user_data.append({
+                'user_id': user.user_id,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'city': user.city,
+                'street': user.street,
+                'landmark': user.landmark,
+                'phone_number': phone_number.phone_number if phone_number else None
+            })
+        
+        return jsonify({
+            'users': user_data
+        }), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 
 @admin_notification_bp.route('/getnotif', methods=['GET', 'POST'])
@@ -72,6 +152,7 @@ def handle_notifications():
             db.session.commit()
 
             return jsonify({'message': 'Notification marked as read'}), 200
+
 
     except Exception as e:
         db.session.rollback()
