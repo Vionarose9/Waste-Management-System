@@ -1,9 +1,18 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, make_response
 from models import db, WasteRequest, User, Admin
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime
+from . import waste_request_bp
 
-waste_request_bp = Blueprint('waste_request', __name__)
+@waste_request_bp.before_request
+def handle_preflight():
+    if request.method == "OPTIONS":
+        response = make_response()
+        response.headers.add("Access-Control-Allow-Origin", "http://localhost:3000")
+        response.headers.add("Access-Control-Allow-Headers", "Content-Type, Authorization")
+        response.headers.add("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        response.headers.add("Access-Control-Allow-Credentials", "true")
+        return response
 
 @waste_request_bp.route('/list', methods=['GET'])
 @jwt_required()
@@ -19,6 +28,10 @@ def get_waste_requests():
         } for req in requests]), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+    
+@waste_request_bp.route('/test', methods=['GET'])
+def get_waste_test():
+    return jsonify({'msg': "hi"}), 200
 
 @waste_request_bp.route('/new', methods=['POST'])
 @jwt_required()
