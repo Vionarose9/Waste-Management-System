@@ -64,13 +64,19 @@ export default function Login() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <Card className="w-full max-w-md">
-        <h2 className="text-2xl font-bold text-center mb-2">Waste Management System</h2>
-        <p className="text-center text-gray-600 mb-6">Login to your account</p>
+    <div
+      className="flex items-center justify-center min-h-screen bg-gradient-to-r from-blue-500 to-green-500 bg-cover bg-center relative"
+      style={{ backgroundImage: `url('/usersignup2.jpeg')` }}
+    >
+      <div className="absolute inset-0 bg-black opacity-10"></div> {/* Dark overlay for background */}
+      <Card className="w-full max-w-md bg-white bg-opacity-70 rounded-3xl shadow-xl p-10 relative z-10">
+        <h2 className="text-2xl font-extrabold text-center mb-2 text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-teal-500">
+          Waste Management System
+        </h2>
+        <p className="text-center text-black-800 font-bold mb-6 text-lg">Login to your account</p>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div>
-            <Label htmlFor="userId" value="User ID" />
+            <Label htmlFor="userId" value="User ID" className="text-lg text-black-800 border-gray-300 focus:border-teal-500 focus:ring-teal-500 rounded-lg" />
             <TextInput
               id="userId"
               name="userId"
@@ -79,10 +85,11 @@ export default function Login() {
               required
               value={formData.userId}
               onChange={handleChange}
+              className="rounded-lg border-gray-300 focus:border-teal-500 focus:ring-teal-500"
             />
           </div>
           <div>
-            <Label htmlFor="password" value="Password" />
+            <Label htmlFor="password" value="Password" className="text-lg text-black-800 border-gray-300 focus:border-teal-500 focus:ring-teal-500 rounded-lg" />
             <TextInput
               id="password"
               name="password"
@@ -91,6 +98,7 @@ export default function Login() {
               required
               value={formData.password}
               onChange={handleChange}
+              className="rounded-lg border-gray-300 focus:border-teal-500 focus:ring-teal-500"
             />
           </div>
           {message.content && (
@@ -98,12 +106,16 @@ export default function Login() {
               {message.content}
             </Alert>
           )}
-          <Button type="submit" disabled={isLoading}>
+          <Button
+            type="submit"
+            className="w-full py-3 mt-4 rounded-full bg-gradient-to-r from-teal-400 to-blue-600 text-white font-semibold hover:from-teal-500 hover:to-blue-700 transition duration-200 ease-in-out transform hover:scale-105"
+            disabled={isLoading}
+          >
             {isLoading ? "Logging in..." : "Login"}
           </Button>
-          <p className="text-center text-sm text-gray-600">
+          <p className="text-center text-sm text-gray-600 mt-4">
             Don't have an account?{' '}
-            <a href="/signup" className="text-blue-600 hover:underline">
+            <a href="/user/signup" className="text-teal-500 font-medium hover:underline">
               Sign up
             </a>
           </p>
