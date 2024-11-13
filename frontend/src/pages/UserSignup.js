@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Button, Label, TextInput, Card, Alert, Select } from 'flowbite-react';
+import { useNavigate } from 'react-router-dom';
 
 export default function SignUp() {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -17,10 +19,24 @@ export default function SignUp() {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', content: '' });
+  const [currentImage, setCurrentImage] = useState(0);
+
+  const backgroundImages = [
+    '/usersignup.png',
+    '/usersignup2.jpeg',
+    '/usersignup3.jpeg'
+  ];
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentImage((prev) => (prev + 1) % backgroundImages.length);
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [backgroundImages.length]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prevState => ({
+    setFormData((prevState) => ({
       ...prevState,
       [name]: value
     }));
@@ -95,16 +111,23 @@ export default function SignUp() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-cover bg-center" style={{backgroundImage: 'url("/Background.png")'}}>
-      <div className="absolute inset-0 bg-black opacity-50"></div>
-      <Card className="w-full max-w-2xl relative z-10">
+    <div
+      className="flex items-center justify-center min-h-screen bg-cover bg-center pt-16" // Added padding at the top
+      style={{ backgroundImage: `url(${backgroundImages[currentImage]})` }}
+    >
+      <Card className="w-full max-w-2xl relative z-10 bg-white bg-opacity-70 shadow-2xl rounded-lg p-8">
         <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4">
-          <div className="col-span-2">
-            <h2 className="text-2xl font-bold text-center mb-2">Waste Management System</h2>
-            <p className="text-center text-gray-600 mb-6">Create your account</p>
+          <div className="col-span-2 text-center">
+            <h2 className="text-2xl font-extrabold mb-2 text-blue-800 uppercase tracking-wide text-shadow-lg">
+              Waste Management System
+            </h2>
+            <p className="text-lg font-bold text-black-800 mb-6 text-shadow-md">
+              Create your account
+            </p>
           </div>
           <div>
-            <Label htmlFor="firstName" value="First Name" />
+            <Label htmlFor="firstName" value="First Name"
+            className="text-lg text-black-800 border-gray-300 focus:border-teal-500 focus:ring-teal-500 rounded-lg" />
             <TextInput
               id="firstName"
               name="firstName"
@@ -113,10 +136,11 @@ export default function SignUp() {
               required
               value={formData.firstName}
               onChange={handleChange}
+              
             />
           </div>
           <div>
-            <Label htmlFor="lastName" value="Last Name" />
+            <Label htmlFor="lastName" value="Last Name" className="text-lg text-black-800 border-gray-300 focus:border-teal-500 focus:ring-teal-500 rounded-lg"/>
             <TextInput
               id="lastName"
               name="lastName"
@@ -128,7 +152,7 @@ export default function SignUp() {
             />
           </div>
           <div>
-            <Label htmlFor="userId" value="User ID" />
+            <Label htmlFor="userId" value="User ID" className="text-lg text-black-800 border-gray-300 focus:border-teal-500 focus:ring-teal-500 rounded-lg" />
             <TextInput
               id="userId"
               name="userId"
@@ -140,7 +164,7 @@ export default function SignUp() {
             />
           </div>
           <div>
-            <Label htmlFor="phoneNumber" value="Phone Number" />
+            <Label htmlFor="phoneNumber" value="Phone Number" className="text-lg text-black-800 border-gray-300 focus:border-teal-500 focus:ring-teal-500 rounded-lg" />
             <TextInput
               id="phoneNumber"
               name="phoneNumber"
@@ -152,7 +176,7 @@ export default function SignUp() {
             />
           </div>
           <div>
-            <Label htmlFor="city" value="City" />
+            <Label htmlFor="city" value="City"  className="text-lg text-black-800 border-gray-300 focus:border-teal-500 focus:ring-teal-500 rounded-lg"/>
             <TextInput
               id="city"
               name="city"
@@ -164,7 +188,7 @@ export default function SignUp() {
             />
           </div>
           <div>
-            <Label htmlFor="street" value="Street" />
+            <Label htmlFor="street" value="Street" className="text-lg text-black-800 border-gray-300 focus:border-teal-500 focus:ring-teal-500 rounded-lg" />
             <TextInput
               id="street"
               name="street"
@@ -176,7 +200,7 @@ export default function SignUp() {
             />
           </div>
           <div>
-            <Label htmlFor="landmark" value="Landmark" />
+            <Label htmlFor="landmark" value="Landmark" className="text-lg text-black-800 border-gray-300 focus:border-teal-500 focus:ring-teal-500 rounded-lg" />
             <TextInput
               id="landmark"
               name="landmark"
@@ -188,29 +212,7 @@ export default function SignUp() {
             />
           </div>
           <div>
-            <Label htmlFor="password" value="Password" />
-            <TextInput
-              id="password"
-              name="password"
-              type="password"
-              required
-              value={formData.password}
-              onChange={handleChange}
-            />
-          </div>
-          <div>
-            <Label htmlFor="confirmPassword" value="Confirm Password" />
-            <TextInput
-              id="confirmPassword"
-              name="confirmPassword"
-              type="password"
-              required
-              value={formData.confirmPassword}
-              onChange={handleChange}
-            />
-          </div>
-          <div>
-            <Label htmlFor="centreId" value="Centre ID" />
+            <Label htmlFor="centreId" value="Centre ID"  className="text-lg text-black-800 border-gray-300 focus:border-teal-500 focus:ring-teal-500 rounded-lg"/>
             <Select
               id="centreId"
               name="centreId"
@@ -225,6 +227,28 @@ export default function SignUp() {
               <option value="4">4 - Koramangala</option>
             </Select>
           </div>
+          <div>
+            <Label htmlFor="password" value="Password"  className="text-lg text-black-800 border-gray-300 focus:border-teal-500 focus:ring-teal-500 rounded-lg"/>
+            <TextInput
+              id="password"
+              name="password"
+              type="password"
+              required
+              value={formData.password}
+              onChange={handleChange}
+            />
+          </div>
+          <div>
+            <Label htmlFor="confirmPassword" value="Confirm Password" className="text-lg text-black-800 border-gray-300 focus:border-teal-500 focus:ring-teal-500 rounded-lg" />
+            <TextInput
+              id="confirmPassword"
+              name="confirmPassword"
+              type="password"
+              required
+              value={formData.confirmPassword}
+              onChange={handleChange}
+            />
+          </div>
           <div className="col-span-2">
             {message.content && (
               <Alert color={message.type === 'success' ? 'success' : 'failure'}>
@@ -232,9 +256,16 @@ export default function SignUp() {
               </Alert>
             )}
           </div>
-          <div className="col-span-2">
-            <Button type="submit" className="w-full" disabled={isLoading}>
+          <div className="col-span-2 space-y-4">
+            <Button type="submit" className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-700 hover:to-indigo-800" disabled={isLoading}>
               {isLoading ? "Signing up..." : "Sign up"}
+            </Button>
+            <Button
+              onClick={() => navigate('/user/login')}
+              type="button"
+              className="w-full bg-gradient-to-r from-green-400 to-teal-600 hover:from-green-600 hover:to-teal-700"
+            >
+              Already have an account? Log in
             </Button>
           </div>
         </form>
