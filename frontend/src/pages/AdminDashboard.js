@@ -56,7 +56,7 @@ export default function Dashboard() {
       const response = await fetch('http://localhost:5000/api/admin/getnotif', {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
           'Content-Type': 'application/json',
         },
         credentials: 'include'
@@ -83,7 +83,7 @@ export default function Dashboard() {
       const response = await fetch('http://localhost:5000/api/admin/getnotif', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
           'Content-Type': 'application/json',
         },
         credentials: 'include',
