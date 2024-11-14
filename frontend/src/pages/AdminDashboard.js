@@ -5,6 +5,7 @@ import {
   Button,
   Table,
   Sidebar,
+  Modal,
   Badge,
   Alert,
   Spinner
@@ -331,79 +332,103 @@ export default function Dashboard() {
       case 'dashboard':
         return (
           <div>
-            <h2 className="text-2xl font-bold mb-4">Dashboard</h2>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
-              <Card>
-                <h5 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
-                  {dashboardData.totalRequests}
-                </h5>
-                <p className="font-normal text-gray-700 dark:text-gray-400">
-                  Total Requests
-                </p>
-              </Card>
-              <Card>
-                <h5 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
-                  {dashboardData.activeVehicles}
-                </h5>
-                <p className="font-normal text-gray-700 dark:text-gray-400">
-                  Active Vehicles
-                </p>
-              </Card>
-              <Card>
-                <h5 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
-                  {dashboardData.collectionRate.toFixed(2)}%
-                </h5>
-                <p className="font-normal text-gray-700 dark:text-gray-400">
-                  Collection Rate
-                </p>
-              </Card>
-              <Card>
-                <h5 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
-                  {dashboardData.totalUsers}
-                </h5>
-                <p className="font-normal text-gray-700 dark:text-gray-400">
-                  Total Users
-                </p>
-              </Card>
-            </div>
-            <Card>
-              <h5 className="text-xl font-bold tracking-tight text-gray-900 dark:text-white mb-4">
-                Recent Collections
-              </h5>
-              {loading ? (
-                <div className="flex justify-center items-center h-64">
-                  <Spinner size="xl" />
-                </div>
-              ) : error ? (
-                <Alert color="failure">{error}</Alert>
-              ) : dashboardData.recentCollections && dashboardData.recentCollections.length > 0 ? (
-                <Table>
-                  <Table.Head>
-                    <Table.HeadCell>Collection ID</Table.HeadCell>
-                    <Table.HeadCell>User</Table.HeadCell>
-                    <Table.HeadCell>Waste Type</Table.HeadCell>
-                    <Table.HeadCell>Date</Table.HeadCell>
-                    <Table.HeadCell>Quantity</Table.HeadCell>
-                  </Table.Head>
-                  <Table.Body className="divide-y">
-                    {dashboardData.recentCollections.map((collection) => (
-                      <Table.Row key={collection.collection_id} className="bg-white dark:border-gray-700 dark:bg-gray-800">
-                        <Table.Cell className="whitespace-nowrap font-medium text-gray-900 dark:text-white">
-                          {collection.collection_id}
-                        </Table.Cell>
-                        <Table.Cell>{`${collection.user.first_name} ${collection.user.last_name}`}</Table.Cell>
-                        <Table.Cell>{collection.waste_type}</Table.Cell>
-                        <Table.Cell>{new Date(collection.collection_date).toLocaleDateString()}</Table.Cell>
-                        <Table.Cell>{collection.collection_quantity}</Table.Cell>
-                      </Table.Row>
-                    ))}
-                  </Table.Body>
-                </Table>
-              ) : (
-                <p>No recent collections available.</p>
-              )}
-            </Card>
-          </div>
+  <h2 className="text-2xl font-bold mb-4">Dashboard</h2>
+  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
+    <div className="p-4 bg-white rounded-lg shadow">
+      <h5 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+        {dashboardData.totalRequests}
+      </h5>
+      <p className="font-normal text-gray-700 dark:text-gray-400">
+        Total Requests
+      </p>
+    </div>
+    <div className="p-4 bg-white rounded-lg shadow">
+      <h5 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+        {dashboardData.activeVehicles}
+      </h5>
+      <p className="font-normal text-gray-700 dark:text-gray-400">
+        Active Vehicles
+      </p>
+    </div>
+    <div className="p-4 bg-white rounded-lg shadow">
+      <h5 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+        {dashboardData.collectionRate.toFixed(2)}%
+      </h5>
+      <p className="font-normal text-gray-700 dark:text-gray-400">
+        Collection Rate
+      </p>
+    </div>
+    <div className="p-4 bg-white rounded-lg shadow">
+      <h5 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+        {dashboardData.totalUsers}
+      </h5>
+      <p className="font-normal text-gray-700 dark:text-gray-400">
+        Total Users
+      </p>
+    </div>
+  </div>
+
+  <div className="p-6 bg-white rounded-lg shadow">
+    <h5 className="text-xl font-bold tracking-tight text-gray-900 dark:text-white mb-4">
+      Recent Collections
+    </h5>
+    {loading ? (
+      <div className="flex justify-center items-center h-64">
+        <Spinner size="xl" />
+      </div>
+    ) : error ? (
+      <div className="text-red-600">{error}</div>
+    ) : dashboardData.recentCollections && dashboardData.recentCollections.length > 0 ? (
+      <div className="overflow-x-auto">
+        <table className="min-w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+          <thead>
+            <tr className="bg-gray-100 dark:bg-gray-700">
+              <th className="px-4 py-2 text-left font-semibold text-gray-700 dark:text-gray-300 border-b border-gray-200 dark:border-gray-700">
+                Collection ID
+              </th>
+              <th className="px-4 py-2 text-left font-semibold text-gray-700 dark:text-gray-300 border-b border-gray-200 dark:border-gray-700">
+                User
+              </th>
+              <th className="px-4 py-2 text-left font-semibold text-gray-700 dark:text-gray-300 border-b border-gray-200 dark:border-gray-700">
+                Waste Type
+              </th>
+              <th className="px-4 py-2 text-left font-semibold text-gray-700 dark:text-gray-300 border-b border-gray-200 dark:border-gray-700">
+                Date
+              </th>
+              <th className="px-4 py-2 text-left font-semibold text-gray-700 dark:text-gray-300 border-b border-gray-200 dark:border-gray-700">
+                Quantity
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+            {dashboardData.recentCollections.map((collection) => (
+              <tr key={collection.collection_id} className="bg-white dark:bg-gray-800">
+                <td className="px-4 py-2 font-medium text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700">
+                  {collection.collection_id}
+                </td>
+                <td className="px-4 py-2 text-gray-700 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
+                  {`${collection.user.first_name} ${collection.user.last_name}`}
+                </td>
+                <td className="px-4 py-2 text-gray-700 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
+                  {collection.waste_type}
+                </td>
+                <td className="px-4 py-2 text-gray-700 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
+                  {new Date(collection.collection_date).toLocaleDateString()}
+                </td>
+                <td className="px-4 py-2 text-gray-700 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
+                  {collection.collection_quantity}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    ) : (
+      <p>No recent collections available.</p>
+    )}
+  </div>
+</div>
+
         );
       case 'requests':
         return <RequestsTable requests={requests} error={requestError} />;
@@ -689,8 +714,25 @@ export default function Dashboard() {
         <main className="flex-1 p-4 mt-16">
           {renderContent()}
         </main>
+        <Modal show={showAdminModal} onClose={() => setShowAdminModal(false)}>
+          <Modal.Header>Admin Information</Modal.Header>
+          <Modal.Body>
+            {adminData ? (
+              <div>
+                <p><strong>Admin ID:</strong> {adminData.admin_id}</p>
+                <p><strong>Name:</strong> {adminData.admin_name}</p>
+                <p><strong>Centre ID:</strong> {adminData.centre_id}</p>
+                {/* Add more admin data fields as needed */}
+              </div>
+            ) : (
+              <p>Loading admin data...</p>
+            )}
+          </Modal.Body>
+          <Modal.Footer>
+            <Button color="gray" onClick={() => setShowAdminModal(false)}>Close</Button>
+          </Modal.Footer>
+        </Modal>
       </div>
-      
     </div>
   );
 }
