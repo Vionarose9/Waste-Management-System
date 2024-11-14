@@ -3,6 +3,7 @@ from models import db, WasteRequest, User, Admin
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime
 from . import waste_request_bp
+from sqlalchemy import text
 
 @waste_request_bp.before_request
 def handle_preflight():
@@ -74,6 +75,72 @@ def create_waste_request():
             'message': 'Waste request created successfully',
             'req_id': new_request.req_id
         }), 201
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+    
+    
+# @waste_request_bp.route('/update-status', methods=['POST'])
+# @jwt_required()
+# def update_collection_status():
+#     try:
+#         data = request.get_json()
+#         req_id = data.get('req_id')
+        
+#         if not req_id:
+#             return jsonify({'error': 'Request ID is required'}), 400
+            
+#         # Call the stored procedure
+#         result = db.session.execute(
+#             text('CALL update_waste_collection_status(:req_id)'),
+#             {'req_id': req_id}
+#         )
+        
+#         # Commit the transaction
+#         db.session.commit()
+        
+#         # Get the first row of the result
+#         updated_record = result.fetchone()
+        
+#         if updated_record:
+#             return jsonify({
+#                 'success': True,
+#                 'message': 'Collection status updated successfully',
+#                 'data': {
+#                     'req_id': updated_record.req_id,
+#                     'status': updated_record.status,
+#                     'collection_status': updated_record.collection_status,
+#                     'collected_date': updated_record.collected_date.isoformat() if updated_record.collected_date else None
+#                 }
+#             }), 200
+#         else:
+#             return jsonify({'error': 'Request not found'}), 404
+            
+#     except Exception as e:
+#         db.session.rollback()
+#         return jsonify({'error': str(e)}), 500
+
+@waste_request_bp.route('/mark-collected', methods=['POST'])
+@jwt_required()
+def mark_as_collected():
+    try:
+        user_id = get_jwt_identity()
+        data = request.get_json()
+
+        if not data or 'req_id' not in data or 'collection_quantity' not in data:
+            return jsonify({'error': 'Missing required fields'}), 422
+
+        # Call the stored procedure
+        result = db.session.execute(text('CALL mark_waste_collected(:p_req_id, :p_collection_quantity, :p_user_id)'),
+                                    {'p_req_id': data['req_id'],
+                                     'p_collection_quantity': data['collection_quantity'],
+                                     'p_user_id': user_id})
+
+        # Commit the transaction
+        db.session.commit()
+
+        return jsonify({'message': 'Waste request marked as collected successfully'}), 200
 
     except Exception as e:
         db.session.rollback()

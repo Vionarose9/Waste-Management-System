@@ -92,7 +92,9 @@ class WasteCollection(db.Model):
     req_id = db.Column(db.String(50), db.ForeignKey('waste_request.req_id'), nullable=False)
     collection_quantity = db.Column(db.Float, nullable=False)
     collection_date = db.Column(db.DateTime, nullable=False)
-    report_id = db.Column(db.String(50), db.ForeignKey('analysis_report.report_id'), nullable=False)
+
+    # Define a one-to-one relationship with AnalysisReport
+    analysis_report = db.relationship('AnalysisReport', back_populates='waste_collection', uselist=False)
 
     def __repr__(self):
         return f'<WasteCollection {self.collection_id}>'
@@ -105,9 +107,13 @@ class AnalysisReport(db.Model):
     nonbiodegradable_waste = db.Column(db.Float, nullable=False)
     date = db.Column(db.DateTime, nullable=False)
     admin_id = db.Column(db.String(50), db.ForeignKey('admin.admin_id'), nullable=False)
-    
-    # Relationships
-    waste_collections = db.relationship('WasteCollection', backref='analysis_report', lazy=True)
+    collection_id = db.Column(db.String(50), db.ForeignKey('waste_collection.collection_id'), nullable=False)
+
+    # Define a one-to-one relationship with WasteCollection
+    waste_collection = db.relationship('WasteCollection', back_populates='analysis_report')
+
+    def __repr__(self):
+        return f'<AnalysisReport {self.report_id}>'
 
     def __repr__(self):
         return f'<AnalysisReport {self.report_id}>'
