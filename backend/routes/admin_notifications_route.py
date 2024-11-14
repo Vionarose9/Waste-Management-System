@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, request,make_response
-from models import db, WasteRequest, Admin
+from models import db, WasteRequest, Admin,Vehicle,WasteCollection,Centre
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from flask_cors import cross_origin
 from . import admin_notification_bp
@@ -29,7 +29,7 @@ def get_requests():
         if not admin:
             return jsonify({'error': 'Admin not found'}), 404
 
-        # Use joinedload to fetch related WasteCollection in a single query
+        # Use joinedload to fetch related WasteCollection and User in a single query
         requests = WasteRequest.query.options(
             joinedload(WasteRequest.waste_collection),
             joinedload(WasteRequest.user)
@@ -64,7 +64,7 @@ def get_requests():
         }), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
+    
 @admin_notification_bp.route('/users', methods=['GET'])
 @jwt_required()
 def get_users():
@@ -93,6 +93,58 @@ def get_users():
         return jsonify({
             'users': user_data
         }), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@admin_notification_bp.route('/dashboard', methods=['GET'])
+@jwt_required()
+def get_dashboard_data():
+    try:
+        admin_id = get_jwt_identity()
+        admin = Admin.query.get(admin_id)
+        
+        if not admin:
+            return jsonify({'error': 'Admin not found'}), 404
+
+        # Calculate total requests
+        total_requests = WasteRequest.query.filter_by(admin_id=admin_id).count()
+
+        # Calculate active vehicles
+        active_vehicles = Vehicle.query.filter_by(centre_id=admin.centre_id, status='active').count()
+
+        # Calculate collection rate
+        total_collections = WasteCollection.query.join(WasteRequest).filter(WasteRequest.admin_id == admin_id).count()
+        collection_rate = (total_collections / total_requests * 100) if total_requests > 0 else 0
+
+        # Get total users
+        total_users = User.query.filter_by(centre_id=admin.centre_id).count()
+
+        # Get recent waste collections instead of waste requests
+        recent_collections = WasteCollection.query.join(WasteRequest).filter(WasteRequest.admin_id == admin_id).order_by(WasteCollection.collection_date.desc()).limit(5).all()
+
+        recent_collections_data = []
+        for collection in recent_collections:
+            recent_collections_data.append({
+                'collection_id': collection.collection_id,
+                'user': {
+                    'first_name': collection.waste_request.user.first_name,
+                    'last_name': collection.waste_request.user.last_name
+                },
+                'waste_type': collection.waste_request.waste_type,
+                'collection_date': collection.collection_date.isoformat(),
+                'collection_quantity': collection.collection_quantity
+            })
+
+        dashboard_data = {
+            'totalRequests': total_requests,
+            'activeVehicles': active_vehicles,
+            'collectionRate': round(collection_rate, 2),
+            'totalUsers': total_users,
+            'recentCollections': recent_collections_data
+        }
+
+        return jsonify(dashboard_data), 200
+
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -156,4 +208,29 @@ def handle_notifications():
 
     except Exception as e:
         db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+    
+@admin_notification_bp.route('/data', methods=['GET'])
+@jwt_required()
+def get_admin_data():
+    try:
+        admin_id = get_jwt_identity()
+        admin = Admin.query.get(admin_id)
+        
+        if not admin:
+            return jsonify({'error': 'Admin not found'}), 404
+
+        # Fetch the centre information
+        centre = Centre.query.get(admin.centre_id)
+
+        admin_data = {
+            'admin_id': admin.admin_id,
+            'admin_name': admin.admin_name,
+            'centre_id': admin.centre_id,
+            'centre_name': centre.centre_name if centre else 'Unknown',
+            'centre_location': centre.location if centre else 'Unknown'
+        }
+
+        return jsonify(admin_data), 200
+    except Exception as e:
         return jsonify({'error': str(e)}), 500
