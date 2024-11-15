@@ -2,6 +2,8 @@ from flask import Blueprint, jsonify, request,make_response
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from models import db, Admin, Vehicle, WasteRequest, User
 from .import vehicle_bp
+from sqlalchemy import text
+from datetime import datetime, timedelta
 
 @vehicle_bp.before_request
 def handle_preflight():
@@ -99,3 +101,32 @@ def assign_vehicle_to_requests(vehicle):
     except Exception as e:
         db.session.rollback()
         print(f"Error assigning vehicle to requests: {str(e)}")
+        
+
+@vehicle_bp.route('/waste-stats', methods=['GET'])
+def get_vehicle_waste_stats():
+    try:
+        # Get vehicle_id from the request
+        vehicle_id = request.args.get('vehicle_id')
+
+        if not vehicle_id:
+            return jsonify({'error': 'Vehicle ID is required'}), 400
+
+        # Call the SQL function
+        query = text("""
+            SELECT calculate_total_waste_by_vehicle(:vehicle_id) as stats
+        """)
+        
+        result = db.session.execute(query, {'vehicle_id': vehicle_id})
+
+        # Extract the JSON result
+        stats = result.scalar()
+
+        if stats is None:
+            return jsonify({'error': 'No data found for the given vehicle'}), 404
+
+        return jsonify({'vehicle_stats': stats})
+
+    except Exception as e:
+        print(f"Error: {str(e)}")
+        return jsonify({'error': 'An error occurred while fetching vehicle stats'}), 500

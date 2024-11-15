@@ -149,6 +149,109 @@ def get_dashboard_data():
         return jsonify({'error': str(e)}), 500
 
 
+from flask import jsonify
+from flask_jwt_extended import jwt_required, get_jwt_identity
+from . import admin_notification_bp
+from models import db, AnalysisReport, Admin, WasteCollection, WasteRequest
+from sqlalchemy import func
+from datetime import datetime
+
+from flask import jsonify, make_response
+from flask_jwt_extended import jwt_required, get_jwt_identity
+from . import admin_notification_bp
+from models import db, AnalysisReport, Admin, WasteCollection, WasteRequest
+from sqlalchemy import func
+from datetime import datetime
+
+@admin_notification_bp.route('/analysis', methods=['GET'])
+@jwt_required()
+def get_analysis_data():
+    try:
+        admin_id = get_jwt_identity()
+        if not admin_id:
+            return jsonify({'error': 'Invalid or expired token'}), 401
+
+        admin = Admin.query.get(admin_id)
+        if not admin:
+            return jsonify({'error': 'Admin not found'}), 404
+
+        # Populate AnalysisReport table
+        try:
+            populate_analysis_report(admin_id)
+        except Exception as e:
+            print(f"Error populating analysis report: {str(e)}")
+            return jsonify({'error': str(e)}), 500
+
+        # Aggregate data from AnalysisReport
+        try:
+            analysis_data = db.session.query(
+                func.coalesce(func.sum(AnalysisReport.Household), 0).label('total_household'),
+                func.coalesce(func.sum(AnalysisReport.Organic), 0).label('total_organic'),
+                func.coalesce(func.sum(AnalysisReport.Recyclable), 0).label('total_recyclable')
+            ).filter(AnalysisReport.admin_id == admin_id).first()
+
+            return jsonify({
+                'totalHousehold': float(analysis_data.total_household),
+                'totalOrganic': float(analysis_data.total_organic),
+                'totalRecyclable': float(analysis_data.total_recyclable)
+            }), 200
+
+        except Exception as e:
+            print(f"Error querying analysis data: {str(e)}")
+            return jsonify({'error': 'Error retrieving analysis data'}), 500
+
+    except Exception as e:
+        print(f"General error in analysis route: {str(e)}")
+        return jsonify({'error': 'Internal server error'}), 500
+
+def populate_analysis_report(admin_id):
+    try:
+        # Get all waste collections for the admin that don't have an analysis report
+        collections_query = db.session.query(WasteCollection).join(
+            WasteRequest,
+            WasteCollection.req_id == WasteRequest.req_id
+        ).filter(
+            WasteRequest.admin_id == admin_id,
+            ~WasteCollection.collection_id.in_(
+                db.session.query(AnalysisReport.collection_id)
+            )
+        )
+        
+        collections = collections_query.all()
+        
+        if not collections:
+            print("No new collections found to analyze")
+            return
+
+        for collection in collections:
+            waste_request = WasteRequest.query.get(collection.req_id)
+            if not waste_request:
+                continue
+
+            waste_type = waste_request.waste_type.lower()
+            
+          
+            
+            new_report = AnalysisReport(
+                report_id=f"AR-{collection.collection_id}",
+              
+                Household=collection.collection_quantity if waste_type == 'household' else 0,
+                Organic=collection.collection_quantity if waste_type == 'organic' else 0,
+                Recyclable=collection.collection_quantity if waste_type == 'recyclable' else 0,
+                date=datetime.utcnow(),
+                admin_id=admin_id,
+                collection_id=collection.collection_id
+            )
+            db.session.add(new_report)
+        
+        db.session.commit()
+        print(f"Successfully added {len(collections)} new analysis reports")
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error in populate_analysis_report: {str(e)}")
+        raise Exception(f"Failed to populate analysis report: {str(e)}")
+
 @admin_notification_bp.route('/getnotif', methods=['GET', 'POST'])
 @jwt_required()
 def handle_notifications():

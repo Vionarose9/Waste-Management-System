@@ -102,9 +102,9 @@ class WasteCollection(db.Model):
 class AnalysisReport(db.Model):
     __tablename__ = 'analysis_report'
     report_id = db.Column(db.String(50), primary_key=True)
-    wet_waste_qty = db.Column(db.Float, nullable=False)
-    biodegradable_waste = db.Column(db.Float, nullable=False)
-    nonbiodegradable_waste = db.Column(db.Float, nullable=False)
+    Household = db.Column(db.Float, nullable=False)
+    Organic = db.Column(db.Float, nullable=False)
+    Recyclable = db.Column(db.Float, nullable=True)
     date = db.Column(db.DateTime, nullable=False)
     admin_id = db.Column(db.String(50), db.ForeignKey('admin.admin_id'), nullable=False)
     collection_id = db.Column(db.String(50), db.ForeignKey('waste_collection.collection_id'), nullable=False)
