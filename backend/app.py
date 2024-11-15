@@ -126,7 +126,7 @@ from models import db, Admin
 from config import Config
 from flask_jwt_extended import JWTManager
 import logging
-from routes import auth_bp, admin_notification_bp, waste_request_bp,vehicle_bp,adminroutes_bp
+from routes import auth_bp, admin_notification_bp, waste_request_bp,vehicle_bp
 
 
 def test_db_connection():
@@ -189,7 +189,7 @@ def create_app(config_class=Config):
     app.register_blueprint(waste_request_bp, url_prefix="/api/waste")
     app.register_blueprint(admin_notification_bp, url_prefix="/api/admin")
     app.register_blueprint(vehicle_bp, url_prefix='/api/vehicles')
-    app.register_blueprint(adminroutes_bp, url_prefix='/api/adminroutes')
+  
 
     @app.route("/")
     def index():
