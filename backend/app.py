@@ -132,7 +132,7 @@ from routes import auth_bp, admin_notification_bp, waste_request_bp,vehicle_bp,a
 def test_db_connection():
     try:
         connection = pymysql.connect(
-            host="localhost", user="root", password="root", port=3306
+            host="127.0.0.1", user="root", password="vijju@2004", port=3305
         )
         print("Successfully connected to MySQL server!")
         connection.close()

@@ -11,7 +11,8 @@ def handle_preflight():
         response = make_response()
         response.headers.add("Access-Control-Allow-Origin", "http://localhost:3000")
         response.headers.add("Access-Control-Allow-Headers", "Content-Type, Authorization")
-        response.headers.add("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        
+        response.headers.add("Access-Control-Allow-Methods", "GET, POST, OPTIONS,DELETE")
         response.headers.add("Access-Control-Allow-Credentials", "true")
         return response
 
@@ -142,6 +143,25 @@ def mark_as_collected():
 
         return jsonify({'message': 'Waste request marked as collected successfully'}), 200
 
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+    
+    
+@waste_request_bp.route('/delete/<req_id>', methods=['DELETE'])
+@jwt_required()
+def delete_waste_request(req_id):
+    try:
+        user_id = get_jwt_identity()
+        request = WasteRequest.query.filter_by(req_id=req_id, user_id=user_id).first()
+        
+        if not request:
+            return jsonify({'error': 'Request not found or you do not have permission to delete it'}), 404
+        
+        db.session.delete(request)
+        db.session.commit()
+        
+        return jsonify({'message': 'Waste request deleted successfully'}), 200
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
