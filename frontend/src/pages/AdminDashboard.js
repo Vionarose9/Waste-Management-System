@@ -23,10 +23,13 @@ import {
 } from 'react-icons/hi';
 import { useNavigate } from 'react-router-dom';
 import UsersList from './UserList';
+import axios from 'axios';
 import RequestsTable from './RequestsTable';
+import AnalysisReport from './AnalysisReport';
 
 export default function Dashboard() {
   const [isSidebarOpen, setSidebarOpen] = useState(true);
+  const [stats, setStats] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [notificationCount, setNotificationCount] = useState(0);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -92,6 +95,7 @@ export default function Dashboard() {
     }
   }, [activeTab]);
 
+  
   const fetchDashboardData = async () => {
     setLoading(true);
     try {
@@ -432,6 +436,8 @@ export default function Dashboard() {
         );
       case 'requests':
         return <RequestsTable requests={requests} error={requestError} />;
+        case 'analysis':
+          return <AnalysisReport />;
       case 'users':
         return <UsersList users={users} error={userError} />;
         case 'vehicles':
@@ -496,6 +502,8 @@ export default function Dashboard() {
                   </table>
                 </div>
               </div>
+              
+              
             </div>
       );
       default:
@@ -590,7 +598,8 @@ export default function Dashboard() {
               { name: 'Requests', icon: HiDocumentText, tab: 'requests' },
               { name: 'Vehicles', icon: HiTruck, tab: 'vehicles' },
               { name: 'Users', icon: HiUsers, tab: 'users' },
-              { name: 'Settings', icon: HiCog, tab: 'settings' },
+              { name: 'Analysis', icon: HiCog, tab: 'analysis' },
+
             ].map((item) => (
               <button 
                 key={item.tab}
