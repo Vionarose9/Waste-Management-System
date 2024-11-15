@@ -45,11 +45,11 @@ export default function AdminLogin() {
     try {
       const response = await axios.post('http://localhost:5000/api/auth/admin-login', formData);
       showMessage('success', response.data.message);
-      
+
       // Store the token and admin data
       localStorage.setItem('adminToken', response.data.token);
       localStorage.setItem('admin', JSON.stringify(response.data.admin));
-      
+
       // Redirect to admin dashboard after successful login
       navigate('/admin/dashboard');
     } catch (error) {
@@ -64,45 +64,52 @@ export default function AdminLogin() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <Card className="w-full max-w-md">
-        <h2 className="text-2xl font-bold text-center mb-2">Waste Management System</h2>
-        <p className="text-center text-gray-600 mb-6">Admin Login</p>
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <div>
-            <Label htmlFor="adminId" value="Admin ID" />
-            <TextInput
-              id="adminId"
-              name="adminId"
-              type="text"
-              placeholder="Enter your admin ID"
-              required
-              value={formData.adminId}
-              onChange={handleChange}
-            />
-          </div>
-          <div>
-            <Label htmlFor="password" value="Password" />
-            <TextInput
-              id="password"
-              name="password"
-              type="password"
-              placeholder="Enter your password"
-              required
-              value={formData.password}
-              onChange={handleChange}
-            />
-          </div>
-          {message.content && (
-            <Alert color={message.type === 'success' ? 'success' : 'failure'}>
-              {message.content}
-            </Alert>
-          )}
-          <Button type="submit" disabled={isLoading}>
-            {isLoading ? "Logging in..." : "Login"}
-          </Button>
-        </form>
-      </Card>
+    <div
+      className="flex items-center justify-center min-h-screen bg-cover bg-center relative"
+      style={{
+        backgroundImage: "url('/usersignup1.jpeg')",
+      }}
+    >
+      <div className="flex items-center justify-center bg-gray-100">
+        <Card className="w-full max-w-md">
+          <h2 className="text-2xl font-bold text-center mb-2">Waste Management System</h2>
+          <p className="text-center text-gray-600 mb-6">Admin Login</p>
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            <div>
+              <Label htmlFor="adminId" value="Admin ID" />
+              <TextInput
+                id="adminId"
+                name="adminId"
+                type="text"
+                placeholder="Enter your admin ID"
+                required
+                value={formData.adminId}
+                onChange={handleChange}
+              />
+            </div>
+            <div>
+              <Label htmlFor="password" value="Password" />
+              <TextInput
+                id="password"
+                name="password"
+                type="password"
+                placeholder="Enter your password"
+                required
+                value={formData.password}
+                onChange={handleChange}
+              />
+            </div>
+            {message.content && (
+              <Alert color={message.type === 'success' ? 'success' : 'failure'}>
+                {message.content}
+              </Alert>
+            )}
+            <Button className="bg-black text-white hover:bg-gray-800" type="submit" disabled={isLoading}>
+              {isLoading ? "Logging in..." : "Login"}
+            </Button>
+          </form>
+        </Card>
+      </div>
     </div>
   );
 }

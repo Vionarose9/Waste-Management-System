@@ -172,3 +172,39 @@ def test_connection():
         return jsonify({'message': 'Database connection successful'}), 200
     except Exception as e:
         return jsonify({'error': f'Database connection failed: {str(e)}'}), 500
+
+
+@auth_bp.route('/profile', methods=['PUT'])
+@jwt_required()
+def update_profile():
+    try:
+        current_user_id = get_jwt_identity()
+        user = User.query.filter_by(user_id=current_user_id).first()
+        
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+        
+        data = request.json
+        
+        # Update user information
+        user.first_name = data.get('firstName', user.first_name)
+        user.last_name = data.get('lastName', user.last_name)
+        user.city = data.get('city', user.city)
+        user.street = data.get('street', user.street)
+        user.landmark = data.get('landmark', user.landmark)
+        
+        # Update phone number
+        phone_number = UserPhoneNumber.query.filter_by(user_id=current_user_id).first()
+        if phone_number:
+            phone_number.phone_number = data.get('phoneNumber', phone_number.phone_number)
+        else:
+            new_phone_number = UserPhoneNumber(user_id=current_user_id, phone_number=data.get('phoneNumber'))
+            db.session.add(new_phone_number)
+        
+        db.session.commit()
+        
+        return jsonify({"message": "Profile updated successfully"}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+

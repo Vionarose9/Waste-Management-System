@@ -301,7 +301,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { Button, Table, Badge, Alert, Spinner, Modal, Label, TextInput } from 'flowbite-react';
-
+import { HiPencil } from 'react-icons/hi';
 const api = axios.create({
   baseURL: 'http://localhost:5000',
   withCredentials: true,
@@ -345,7 +345,10 @@ export default function Dashboard() {
   const [showCollectionModal, setShowCollectionModal] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [collectionQuantity, setCollectionQuantity] = useState('');
-
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [updatedProfile, setUpdatedProfile] = useState({});
+  const [showEditOptions, setShowEditOptions] = useState(false);
   useEffect(() => {
     fetchRequests();
     fetchUserProfile();
@@ -416,6 +419,27 @@ export default function Dashboard() {
     }
   };
 
+  const handleUpdateProfile = async () => {
+    try {
+      await api.put('/api/auth/profile', updatedProfile);
+      setShowUpdateModal(false);
+      fetchUserProfile();
+    } catch (error) {
+      setError(error.response?.data?.error || 'Failed to update profile');
+    }
+  };
+
+
+
+  const handleDeleteRequest = async (reqId) => {
+    try {
+      await api.delete(`/api/waste/delete/${reqId}`);
+      fetchRequests();
+    } catch (error) {
+      setError(error.response?.data?.error || 'Failed to delete request');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -426,6 +450,31 @@ export default function Dashboard() {
               <h1 className="text-3xl font-bold text-gray-900">Waste Management Dashboard</h1>
               <p className="mt-1 text-sm text-gray-500">Manage your waste collection requests</p>
             </div>
+            
+            <div className="relative">
+                  <button
+                    onClick={() => setShowEditOptions(!showEditOptions)}
+                    className="text-gray-700 hover:text-gray-900 ml-70"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                    </svg>
+                  </button>
+                  {showEditOptions && (
+                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-md overflow-hidden shadow-xl z-10">
+                      <button
+                        onClick={() => {
+                          setShowUpdateModal(true);
+                          setShowEditOptions(false);
+                        }}
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                      >
+                        Update Profile
+                      </button>
+                  
+                    </div>
+                  )}
+                </div>
             <div className="flex items-center gap-4">
               <Button color="light" onClick={() => setShowProfile(!showProfile)}>
                 Profile
@@ -436,6 +485,8 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+
+        
 
         {/* Profile Card */}
         {showProfile && userProfile && (
@@ -547,6 +598,8 @@ export default function Dashboard() {
                     <th className="px-4 py-3 text-left font-semibold text-gray-700">TYPE</th>
                     <th className="px-4 py-3 text-left font-semibold text-gray-700">STATUS</th>
                     <th className="px-4 py-3 text-left font-semibold text-gray-700">ACTION</th>
+                    <th className="px-4 py-3 text-left font-semibold text-gray-700">DELETE</th>
+                    
                   </tr>
                 </thead>
                 <tbody>
@@ -586,6 +639,14 @@ export default function Dashboard() {
                             Mark as Collected
                           </Button>
                         )}
+                      </td>
+                      <td className="px-6 py-4">
+                        <button
+                          onClick={() => handleDeleteRequest(request.req_id)}
+                          className="text-white bg-red-600 hover:bg-red-700 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-xs px-3 py-1.5"
+                        >
+                          Delete
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -630,6 +691,105 @@ export default function Dashboard() {
           </Button>
         </Modal.Footer>
       </Modal>
+
+      {/* Update Profile Modal */}
+      {showUpdateModal && (
+        <div className="fixed z-10 inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                  Update Profile
+                </h3>
+                <div className="mt-2">
+                  <div className="space-y-6">
+                    <div>
+                      <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">First Name</label>
+                      <input
+                        type="text"
+                        id="firstName"
+                        value={updatedProfile.firstName || ''}
+                        onChange={(e) => setUpdatedProfile({...updatedProfile, firstName: e.target.value})}
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">Last Name</label>
+                      <input
+                        type="text"
+                        id="lastName"
+                        value={updatedProfile.lastName || ''}
+                        onChange={(e) => setUpdatedProfile({...updatedProfile, lastName: e.target.value})}
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700">Phone Number</label>
+                      <input
+                        type="text"
+                        id="phoneNumber"
+                        value={updatedProfile.phoneNumber || ''}
+                        onChange={(e) => setUpdatedProfile({...updatedProfile, phoneNumber: e.target.value})}
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="street" className="block text-sm font-medium text-gray-700">Street</label>
+                      <input
+                        type="text"
+                        id="street"
+                        value={updatedProfile.street || ''}
+                        onChange={(e) => setUpdatedProfile({...updatedProfile, street: e.target.value})}
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="city" className="block text-sm font-medium text-gray-700">City</label>
+                      <input
+                        type="text"
+                        id="city"
+                        value={updatedProfile.city || ''}
+                        onChange={(e) => setUpdatedProfile({...updatedProfile, city: e.target.value})}
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="landmark" className="block text-sm font-medium text-gray-700">Landmark</label>
+                      <input
+                        type="text"
+                        id="landmark"
+                        value={updatedProfile.landmark || ''}
+                        onChange={(e) => setUpdatedProfile({...updatedProfile, landmark: e.target.value})}
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <button
+                  type="button"
+                  onClick={handleUpdateProfile}
+                  className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm"
+                >
+                  Update
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowUpdateModal(false)}
+                  className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+
     </div>
   );
 }
