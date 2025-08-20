@@ -52,6 +52,8 @@ pip install -r requirements.txt
 # Run Flask backend
 python app.py
 
+---
+
 ### 🔹 Frontend Setup (React)
 ```bash
 # Navigate to frontend folder
