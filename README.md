@@ -56,14 +56,4 @@ python app.py
 ---
 
 
-###  🔹 Frontend Setup (React)
-```bash
-# Navigate to frontend folder
-cd frontend
 
-# Install dependencies
-npm install
-
-# Run React frontend
-npm start
-```
