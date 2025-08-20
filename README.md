@@ -42,6 +42,7 @@ cd Waste-Management-System
 
 # Create virtual environment
 python -m venv venv
+
 # Activate environment
 venv\Scripts\activate      # Windows  
 source venv/bin/activate   # Mac/Linux  
@@ -51,9 +52,3 @@ pip install -r requirements.txt
 
 # Run Flask backend
 python app.py
-
-
----
-
-
-
